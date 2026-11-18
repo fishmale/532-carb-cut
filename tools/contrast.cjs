@@ -1,4 +1,4 @@
-// 计算 WCAG 对比度：node contrast.cjs
+// 计算 WCAG 对比度：node tools/contrast.cjs
 function lumHex(hex) {
   const h = hex.replace('#', '');
   const rgb = [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16) / 255);
@@ -11,28 +11,29 @@ function ratio(fg, bg) {
   return (hi + 0.05) / (lo + 0.05);
 }
 const pairs = [
-  ['浅色 · muted/card', '#837D6D', '#FFFDF8'],
-  ['浅色 · muted/bg', '#837D6D', '#F2EFE6'],
-  ['浅色 · muted/card-2', '#837D6D', '#F7F2E6'],
-  ['浅色 · ink-2/card', '#413E34', '#FFFDF8'],
-  ['浅色 · ink/card', '#17160F', '#FFFDF8'],
-  ['浅色 · green/card', '#1E5C4B', '#FFFDF8'],
-  ['浅色 · green/bg', '#1E5C4B', '#F2EFE6'],
-  ['浅色 · amber/card', '#B8791F', '#FFFDF8'],
-  ['浅色 · danger/card', '#A6432D', '#FFFDF8'],
-  ['浅色 · white/green', '#FFFFFF', '#1E5C4B'],
-  ['浅色 · lime/green', '#CFE86A', '#1E5C4B'],
-  ['深色 · muted/card', '#918B7A', '#1A1D16'],
-  ['深色 · muted/bg', '#918B7A', '#11130E'],
-  ['深色 · ink/card', '#F2EFE3', '#1A1D16'],
-  ['深色 · ink-2/card', '#CFCAB8', '#1A1D16'],
-  ['深色 · green/card', '#2F8068', '#1A1D16'],
-  ['深色 · lime/card', '#CFE86A', '#1A1D16'],
-  ['深色 · amber/card', '#D79A45', '#1A1D16'],
-  ['深色 · danger/card', '#D46A50', '#1A1D16'],
+  ['浅色 · 正文 ink/card', '#17160F', '#FFFDF8'],
+  ['浅色 · 次要 ink-2/card', '#413E34', '#FFFDF8'],
+  ['浅色 · 说明 muted/card', '#6F6957', '#FFFDF8'],
+  ['浅色 · 说明 muted/bg', '#6F6957', '#F2EFE6'],
+  ['浅色 · 绿色字 green-ink/card', '#1E5C4B', '#FFFDF8'],
+  ['浅色 · 琥珀字 amber/card', '#8F5C13', '#FFFDF8'],
+  ['浅色 · 危险字 danger/card', '#A6432D', '#FFFDF8'],
+  ['浅色 · 白字/green', '#FFFDF8', '#1E5C4B'],
+  ['浅色 · hero 白字/渐变起 #256A56', '#F5F9EC', '#256A56'],
+  ['浅色 · hero 白字/渐变终 #113B2F', '#F5F9EC', '#113B2F'],
+  ['浅色 · 琥珀 pill 字#FFFDF8/#8F5C13', '#FFFDF8', '#8F5C13'],
+  ['深色 · 正文 ink/card', '#F2EFE3', '#1A1D16'],
+  ['深色 · 次要 ink-2/card', '#CFCAB8', '#1A1D16'],
+  ['深色 · 说明 muted/card', '#918B7A', '#1A1D16'],
+  ['深色 · 绿色字 green-ink/card', '#58AB8E', '#1A1D16'],
+  ['深色 · 琥珀字 amber/card', '#D79A45', '#1A1D16'],
+  ['深色 · 白字/green', '#F6F9EE', '#2C7A62'],
+  ['深色 · 琥珀 pill 字#241704/#D79A45', '#241704', '#D79A45'],
+  ['深色 · 选中分段 白/#266E5A', '#F6F9EE', '#266E5A'],
+  ['深色 · 图表线 #2C7A62 / bg', '#2C7A62', '#11130E'],
 ];
 for (const [name, fg, bg] of pairs) {
   const r = ratio(fg, bg);
-  const tag = r >= 4.5 ? 'AA' : r >= 3 ? 'AA-large' : 'FAIL';
-  console.log(`${name.padEnd(22)} ${fg} on ${bg}  ${r.toFixed(2)}:1  ${tag}`);
+  const tag = r >= 4.5 ? 'AA' : r >= 3 ? 'AA-large/图形' : 'FAIL';
+  console.log(`${name.padEnd(30)} ${fg} on ${bg}  ${r.toFixed(2)}:1  ${tag}`);
 }

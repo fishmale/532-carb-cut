@@ -1,98 +1,142 @@
-# Design review: 532 碳降（移动网页 / PWA）
+# 设计评审：532 碳降
 
-> 依据：apple-design skill 的 HIG 资料（`references/hig/*.md`）+ 实测数据。
-> 测量环境：390×844 视口、`http://127.0.0.1:5320/`，数据为 4 周历史（28 条体重、2 次调碳、1 条待调碳）。
-> 数值来自浏览器实际计算样式与 `tools/contrast.cjs`，不是估计。
-
-## Summary
-
-这是一套「克制到只剩数字」的记录工具：暖纸底、深绿主色、荧光绿强调，唯一的主角是今日热量和三条宏量条。整体评级 **Good**——没有 Critical 问题，本轮把 4 个 High（对比度、触控尺寸、选择器、暗色强调色）全部修掉后，剩下的都是 Low 级打磨项。它被记住的应该是「今日摄入目标 + 已摄入/还可吃」那一块 hero：把 532 方法里最需要一眼看清的两个数放在同一屏顶部。
-
-## Critical
-
-无。原有一处接近 Critical 的隐患已修：浅色 `--muted` 只有 4.04:1（卡片）／3.57:1（页面底色），用于 11–12.5 px 的说明文字，低于 WCAG AA 对小字的 4.5:1。
-
-> `accessibility.md › Best practices`: "Strive to meet color contrast minimum standards."
-> `accessibility.md › Best practices`: 「Up to 17 pts → 4.5:1」
-
-## Improvements
-
-### 1. 对比度（High，已修）
-
-| 位置 | 修前 | 修后 |
-| --- | --- | --- |
-| 浅色次要文字 `--muted` | #837D6D → 4.04:1（卡片）/ 3.57:1（页面） | #6F6957 → 5.39:1 / 4.76:1 |
-| 浅色琥珀 `--amber`（未达标、脂肪） | #B8791F → 3.57:1 | #8F5C13 → 5.57:1 / 4.93:1 |
-| 深色绿色文字（链接、达标、补记） | #2F8068 → 3.58:1 | 新 token `--green-ink` #58AB8E → 6.20:1 |
-
-按钮内的白字未动：白 / #1E5C4B = 7.81:1，白 / 深色 #2F8068 = 4.76:1，都达标。
-
-### 2. 触控目标（High，已修）
-
-`accessibility.md`：iOS 最小 **44×44 pt**。实测三处不达标：
-
-- 记录（今日页晨重行）= 51×32 → `.btn.tiny` 高度改为 44 px；
-- 全部食物 21 种 = 82×19 → `.link` 加 `::after` 命中区（上下各扩 13 px，实际命中 45 px 高）；
-- 找不到？自定义一份 = 113×19 → 同上。
-
-其余按钮、tab、食物行、选择器行均 ≥44（tab 条 62 px，食物行 48 px，选择器行 48 px）。
-
-### 3. 快速添加不该让人翻 21 个（High，已修）
-
-原来 21 个食物 chip 横向滚动，找到目标平均要滑 2–3 屏。现在按「最近常吃」排序取前 6（`recentFoods()` 统计 `foodId` 的次数与最近日期），头部给「全部食物 21 种」进入选择器：搜索框 + 「最近常吃」+ 按主食/蛋白/水果/乳制品/坚果油脂分组，行高 48 px，右侧显示碳水 g/100 g。
-
-> `search-fields.md`: "A search field lets people search a collection of content for specific terms they enter."
-
-### 4. Sheet 的关闭方式（Medium，已修）
-
-- 抓手（grip）原来只有 38×4 px，现在是用伪元素包出的 44 px 高命中区，向下拖 >96 px 关闭，小位移回弹；
-- 增加 Tab 焦点陷阱（正向/反向都在 sheet 内循环）与 Esc 关闭；
-- 关闭后焦点回到触发元素（`rememberFocus/restoreFocus`）。
-
-> `sheets.md › Best practices`: "Provide an alternative to the Done button."（我们始终有 ✕ 与点遮罩关闭）
-
-### 5. 字号下限（Medium，已修）
-
-全站最小字号由 9–10 px 提到 **11 px**（图表刻度 11、快捷 chip 说明 11、hero 单位 11）。
-
-> `typography.md › Specifications`: 「iOS, iPadOS | default 17 pt | minimum 11 pt」
-
-### 6. 列表行的可点提示（Medium，已修）
-
-「每日记录」每行都能点开改日期，但原来没有任何提示。现在行尾加了 `›`。
-
-> `lists-and-tables.md › Best practices`: "If you need to let people drill into a list or table row's subviews, use a disclosure indicator accessory control."
-
-### 7. 仍然存在的 Low
-
-- **没有 Dynamic Type 等价物**：字号全部是 px，系统「文字大小」不会生效；浏览器缩放可用，但 iOS 的辅助功能字号不跟随（`accessibility.md` 建议至少支持 200%）。网页端受限于「px 字号 + 无 iOS 系统字号 API」，要真正等价，得把排版改成 rem 并加一个「文字大小」设置（小程序版天然可用 `rpx`）。
-- **没有触觉反馈**：`navigator.vibrate` 只在 Android Chrome 生效，iOS Safari 完全不实现，网页无法触发 Taptic Engine；保存成功目前只靠 toast。上小程序后可用 `wx.vibrateShort` 补。
-- **删除食物没有撤销**：直接删除，靠的是「一眼能看到它消失」。加一个 3 秒 Undo 会更接近系统级体验。
-
-> 图表刻度已在本轮修掉：两张 SVG 的 `viewBox` 宽度改为容器实际像素宽（`syncChartWidth()`，绘制后测量再重绘一次），`340 → 324` 的缩放消失，刻度与「272 g」等标注真正落在 11 px；`.chart .cap` 也从 9.5 px 提到 11 px。
-
-## Craft notes
-
-- **视觉论点**：把「碳脂蛋」当成三条体温计，hero 用大号等宽数字撑场面，其余一律压低对比度让位。这一点做得很稳：整页只有 hero 是饱和绿，卡片全是暖白，荧光绿只出现在进度与关键数字上。
-- **文字**：数字用等宽（`--mono`），中文用系统黑体，单位统一小一号并降一档对比度——是 iOS「正文 + 脚注」的做法，不是网页式的字号堆叠。
-- **节奏**：卡片圆角 20 px、内边距 16–18 px、卡片间距 12 px，纵向呼吸一致；hero 20 px 圆角 + 渐变，是唯一的重心。
-- **一句话**：它不像模板套出来的减脂 App，像一张被认真排版过的记录卡。
-
-## What works
-
-- **hero 的三层信息**：目标热量 → 进度条 → 「已摄入 / 还可吃」，扫一眼就知道今天还能吃多少；这是本轮从用户反馈里长出来的，保留。
-- **532 堆叠条**：一条横条同时表达比例和克数，色块顺序与下方图例一致，颜色带语义（碳水=荧光绿、蛋白=深绿、脂肪=琥珀）。
-- **规则卡把方法本身写在产品里**：5 条规则 + 当前周目标，不需要外部教程。
-- **空状态**：空曲线、空记录、空结算都有具体下一步（「记录 2 天以上就能看到曲线」「点补记」），不是一句「暂无数据」。
-- **已做对的无障碍**：`aria-modal`/`aria-labelledby`、toast `role="status" aria-live="polite"`、`:focus-visible` 描边、`prefers-reduced-motion`、`prefers-contrast: more`、安全区 `env(safe-area-inset-*)` 全覆盖（顶栏、tab 条、sheet 底部、toast）。
-
-## Platform notes
-
-- **网页 vs iPhone 原生**：tab 条 62 px + 安全区、sheet 最大 88 vh、sheet 从底部升起的动画时长 280 ms，观感接近原生；但页面滚动与 sheet 滚动是两层，iOS 上快速滑动时偶有「先滚页面」的错觉（已用 `body.no-scroll` 锁住）。
-- **PWA**：iOS 需要「添加到主屏幕」才有独立窗口与离线；Android Chrome 支持 `beforeinstallprompt`，我们做了「一键安装」按钮。
-- **小程序迁移时**：`core.js` 可直接复用；需要重写的是本文件里所有「视觉资产」——SVG 图表换 canvas、`:focus-visible` 换键盘焦点样式、`env(safe-area-inset-*)` 换成小程序的安全区变量。
-- **不要照搬的**：网页的 hover 态（`@media (hover: hover)`）在小程序里没有意义。
+**评审对象**：https://fishmale.github.io/532-carb-cut/ （v11，PWA / 原生 HTML + CSS + JS）
+**评审条件**：iPhone 尺寸 390×844，浅色与深色两套，Safari 主屏安装形态；截图见 `docs/img/`，对比度由 DOM 实算（`tools/contrast.cjs` + `test/browser-a11y.js`），非目测。
+**局限**：iOS 专属手感（触觉、原生滚动物理、VoiceOver 朗读）无法在桌面浏览器验证，涉及处标为判断。
 
 ---
 
-_本评审用于自查设计质量，不代表 Apple 官方意见。_
+## 摘要
+
+这是一款「只讲一件事」的工具：今天还能吃多少碳水。hero 三层（目标 2,299 kcal → 进度 → 已摄入 0 / 还可吃 1,727）把 532 规则变成当日可执行的数字，宏量细分成「克数 / 上限」而不是百分比，适合边吃边算。签名元素是 hero 与 5:3:2 堆叠条——图形与规则同构，不是装饰。
+
+评级：**Critical issues**。只有一条 Critical（极大字号时布局崩塌），其余为导航标题、方案页信息过载、体重预填等 Medium。对比度、触控尺寸、弹层与焦点、深浅色 token 都已达标，属于「骨架很正、收口未完成」。
+
+| 维度 | 结论 |
+| --- | --- |
+| 对比度（WCAG AA） | 通过。浅色 243 个文本节点 0 失败，最低 muted/页面底 4.76:1；深色 0 失败，最低 muted 5.02:1 |
+| 触控目标 | 通过。默认 44×44；文字链用 `::after` 扩到约 45×45 |
+| 大字号生存 | **不通过**。150% 开始错位，200% 不可用 |
+| 弹层与键盘 | 通过。下滑 >96px 关闭、点遮罩关闭、焦点圈定、Esc 关闭 |
+| 深浅色 | 通过（本轮修掉 3 处深色缺陷） |
+| 横屏 | 可用但不优雅，单列居中，两侧各约 190px 空白 |
+
+---
+
+## Critical
+
+### C1 大字号下布局崩塌（Critical）
+
+**现象**：把 `#main / .topbar / .tabbar` 内 116 个文字节点的字号放大到 1.5× 与 2×（等价 Safari「aA → 文字大小」）：
+
+- 150%：品牌名「532 碳降」折成两行，压住右侧「第 5 周 · 第 1 天」；hero 的「已摄入 0 kcal / 还可吃 2,299 kcal」两列错位（见 `docs/img/text-150.png`）。
+- 200%：hero 竖排断字、54px 数字溢出 358px 卡片、tabbar 标签被裁（见 `docs/img/text-200.png`），页面基本不可读。
+
+**为什么**：`typography.md › Supporting Dynamic Type`——"Make sure your app's layout adapts to all font sizes." 网页拿不到动态字体，但 Safari 的 aA 与安卓 WebView 的文字缩放同样会把字放大，而盒子不变。
+
+**根因（可量化）**：全站 px 定尺；**24 个固定高度 44–48px 的控件里塞着 13–15px 的字**；hero 的两列是 `flex` 且不换行、大数字无 `min-width:0`；顶栏「品牌 + 周标签」挤在 390×48 里。
+
+**修法**（一次小型重构，约 1 天）：
+
+1. `html { font-size: 100% }`，全站 px → rem（1rem = 16px）。
+2. 固定 `height` 改 `min-height`；`white-space: nowrap` 只在 tab 标签与按钮短词上保留，其余允许换行。
+3. hero 的「已摄入 / 还可吃」改 `flex-wrap: wrap; gap: 4px 12px`；大数字加 `min-width: 0; overflow-wrap: anywhere`。
+4. 顶栏品牌 `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`。
+5. 给网页一个等价物：我的 →「文字大小」（跟随系统 / 大 / 特大，改 `html` 的 font-size 为 100% / 112% / 125%），写进 `state.settings`。
+
+**说明**：主屏安装形态没有 Safari 的 aA 菜单，影响主要在浏览器内使用、安卓 WebView 与小程序的字体档位；但这仍是低视力用户唯一的放大手段，故按 Critical 处理。
+
+---
+
+## 改进
+
+### H1 顶栏把应用名当标题（High）
+
+**现象**：顶栏 390×48 左侧是「532 碳降」（约 96px 宽），右侧是「第 5 周 · 第 1 天」，四个页面都一样；「你在哪一页」只能靠底部 tab 判断。
+**为什么**：`toolbars.md › Titles`——"Don't title windows with your app name." 标题应帮人确认位置，"Write a concise title… under 15 characters"。
+**修法**：左侧改为当前页标题（今日 / 记录 / 方案 / 我的）；品牌名移到首屏与「关于」；周标签保留在右侧。
+
+### M1 方案页的信息密度（Medium）
+
+**现象**：方案页 6 张卡、内容高 1,887px，其中「规则」350px + 「高级设置」360px，合计占 38%。规则是低频查阅内容，高级设置是低频调节项，却和「本周目标」同级。
+**为什么**：`settings.md › General settings`——"Put general, infrequently changed settings in your custom settings area."；`layout.md › Visual hierarchy`。
+**修法**：规则折成一张「查看 532 规则 ›」入口（进 sheet 或独立页）；高级设置移到 我的 → 方案参数。方案页从 6 卡变 4 卡，注意力回到当周目标。
+
+### M2 体重输入预填「上次体重」（Medium）
+
+**现象**：记录页体重框预填 78.2（最近一次的值）。今天还没称就点「保存」，会写入一条 78.2 的今日记录，污染曲线与第 7 天结算。
+**为什么**：`entering-data.md`（动态校验、避免误存）与 `text-fields.md`（用占位符而不是默认值表达「可以是这个」）的原则；此处为设计判断。
+**修法**：今天无记录时清空值、用 `placeholder="上次 78.2"`；今天有记录时预填当天值并显示「改今天」。
+
+### M3 图表的无障碍描述只有名称（Medium）
+
+**现象**：两张图都是 `role="img" aria-label="体重曲线"` / `aria-label="碳水阶梯"`，读屏听不到数值。
+**为什么**：`charting-data.md › Best practices`——"provide both accessibility labels that describe chart values and components"。
+**修法**：`aria-label` 拼出摘要，如「体重曲线：10/21 起 80.6 kg，共 28 次，最新 78.2 kg，目标 72.0 kg，下降 2.4 kg」；碳水阶梯给「302 g 起，第 2、3 周各降 15 g，当前 272 g」。
+
+### M4 外观三档开关（Medium）
+
+**现象**：我的 → 外观：跟随系统 / 浅色 / 深色，并持久化。
+**为什么**：`dark-mode.md › Best practices`——"Avoid offering an app-specific appearance setting."
+**修法**：默认跟随系统即可；若要保留「强制浅色」给拍照核对场景，收到 我的 → 高级，默认「跟随系统」。
+
+### M5 禁用按钮与次要按钮同款（Medium）
+
+**现象**：待调碳卡的「执行 −15 g」在 3 天冷静期内是禁用态，但外观是米色底 + 灰字的常规按钮，与旁边「本周先不动」几乎同级；上一轮为过对比度把 `opacity` 换成了中性底，代价是可点性变弱。
+**修法**：禁用态加虚线边或直接换成说明行「11/21 起可执行 −15 g」，到点再变成可点按钮。
+
+### L1 术语与状态文案（Low）
+
+- 「调碳待执行」像内部状态机，建议标题写「第 4 周没达标」。
+- 本周还没称重时「本周 0.0 kg」读起来像「测过、没变化」，用「—」更诚实。
+- 「532」在首屏出现过但没有解释；设置页的副标题已经解释了，可考虑在方案页 5:3:2 卡头加一句「碳水 / 蛋白 / 脂肪」。
+
+### L2 删除与撤销（Low）
+
+删除食物记录是一次点击即时生效，没有撤销。按 `undo-and-redo.md › Best practices`（让人能预判并看到撤销结果），建议 toast 带「撤销」5 秒，或至少二次确认。
+
+---
+
+## 工艺笔记
+
+**观点**：数字优先。不是把三张表格塞进手机，而是把 532 压成三个可执行数字（碳水克数 / 已摄入 / 还可吃）。图表不是装饰：碳水阶梯把「每周只许动一次」画成台阶，虚线标当周——规则被图形化了，这是整套 UI 里最有说服力的一处。
+
+**签名元素**：hero。目标 → 进度条 → 已摄入 / 还可吃，三层一气呵成；配 5:3:2 堆叠条，视觉与世界观的同构度很高。
+
+**需要警惕的模板感**：暖米 `#F2EFE6` + 深绿 `#1E5C4B` + 荧光绿 `#CFE86A` + 大号数字 hero，正好是当下生成式界面最常用的组合之一。它现在成立，是因为荧光绿**只**给进度与达标状态（hero 进度条、macro 填充、曲线上的结算点），没有泛滥；图标也是 5:3:2 的三根柱子。若再往界面上叠绿色装饰，就会滑向模板。
+
+**排版**：系统中文字体 + 等宽数字；54px（hero）/ 17px（卡内数值）/ 11px（说明）三级，层级靠字号与字重而非颜色，克制得对。11px 已是 HIG 移动端下限（`typography.md`），不要再往下。
+
+**结构**：卡片头统一「标题 + 右注」，卡内点线分隔、卡间留白，重复但不乱。这套骨架能撑住新增功能。
+
+**如果只收一件**：把方案页的「规则」与「高级设置」收起来（见 M1）。这是最值钱的一次减法。
+
+---
+
+## 有效之处
+
+- **hero 三层信息**（目标 / 进度 / 已摄入·还可吃）一眼闭合，不需要心算；宏量写成「0 / 272 g」带单位，直接对应食物秤。
+- **碳水阶梯**：台阶 + 当周虚线 + 顶部注释「每周只动这一项」，把「不再乱降碳水」这条建议做成了视觉约束。
+- **结算卡**：预填第 7 天体重，达标与未达标文案不同（「达标就保持 300 g 碳水不动」/「差 0.30 kg，3 天后提示下调」），反馈具体到数字。
+- **弹层**：grabber + 下滑 96px 关闭 + 点遮罩关闭 + 关闭键，三条退路；焦点在面板内循环（实测 28 个可聚焦元素，正反方向都能回卷），Esc 关闭。
+- **对比度与触控**：全部 AA（浅色最低 4.76:1，深色最低 5.02:1），默认 44×44，文字链扩到 45×45；`prefers-reduced-motion`、`prefers-contrast: more` 都有响应。
+- **暗色不是反色**：深绿底改为 `#141A16` 系的暖黑，hero 保留深绿渐变，荧光绿在暗色下依然只表示进度。
+
+---
+
+## 平台备注
+
+- **PWA**：`env(safe-area-inset-*)` 已用（顶栏、tabbar、sheet 各一处），刘海与底部横条不会压内容；`manifest` 锁 portrait，横屏 844×390 只有单列居中（`docs/img/landscape.png`），要更体面可做两栏（hero 左、清单右）。
+- **小程序迁移**：底部 tab 用 `wx.switchTab`；sheet 用原生半屏；字号用 rpx 并保留 C1 的「文字大小」档位；`core.js` 的规则计算可直接复用。
+- **触觉**：网页没有 Taptic（`navigator.vibrate` 仅安卓 Chrome），「加入今日」「结算」「调碳生效」三个动作在小程序里值得加 `wx.vibrateShort`。
+- **读屏**：卡片标题用 `h2`、行数据用 `span`，顺序基本正确；M3 补上图表数值后，VoiceOver 才算完整。
+
+---
+
+## 附：本轮已修
+
+1. 深色下 `--green-ink` 缺失（`.link` 落到浅色绿，2.18:1）→ 深色块补 `#58AB8E`。
+2. 深色琥珀 pill 白字 2.26:1 → 改用 `--pill-ink`（7.17:1）。
+3. 深色分段控件选中态白字 4.47:1 → 分段底色改 `#266E5A`（5.69:1）。
+4. 文字链命中区 `inset:-13px 0` → `-13px -10px`（约 45×45）。
+5. 4 个可复用脚本：`test/browser-a11y.js`（对比度/触控/字号审计）、`test/browser-metrics.js`、`test/browser-textscale.js`、`test/browser-open-food.js`。

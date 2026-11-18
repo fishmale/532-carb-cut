@@ -23,6 +23,7 @@
   --lime: #CFE86A;
   --lime-deep: #A6C531;
   --amber: #8F5C13;
+  --pill-ink: #FFFDF8;
   --amber-soft: rgba(184, 121, 31, 0.1);
   --danger: #A6432D;
   --track: #EDE7D8;
@@ -48,13 +49,15 @@
   --muted: #918B7A;
   --line: #2C3226;
   --line-strong: #414A37;
-  --green: #2F8068;
+  --green: #2C7A62;
+  --green-ink: #58AB8E;
   --green-deep: #17392F;
   --green-soft: rgba(120, 200, 170, 0.1);
   --lime: #CFE86A;
   --lime-deep: #BED94F;
   --amber: #D79A45;
   --amber-soft: rgba(215, 154, 69, 0.12);
+  --pill-ink: #241704;
   --danger: #D46A50;
   --track: #2A2F23;
   --tabbar: rgba(17, 19, 14, 0.9);
@@ -74,12 +77,13 @@
     --green-ink: #58AB8E;
     --line: #2C3226;
     --line-strong: #414A37;
-    --green: #2F8068;
+    --green: #2C7A62;
     --green-deep: #17392F;
     --green-soft: rgba(120, 200, 170, 0.1);
     --lime-deep: #BED94F;
     --amber: #D79A45;
     --amber-soft: rgba(215, 154, 69, 0.12);
+    --pill-ink: #241704;
     --danger: #D46A50;
     --track: #2A2F23;
     --tabbar: rgba(17, 19, 14, 0.9);
@@ -294,6 +298,12 @@ input, select { font: inherit; color: inherit; }
 
 .seg-btn.is-on { background: var(--green); color: #F6F9EE; }
 
+:root[data-theme="dark"] .seg-btn.is-on { background: #266E5A; }
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] .seg-btn.is-on { background: #266E5A; }
+}
+
 .choices { display: flex; flex-direction: column; gap: 8px; }
 
 .choice {
@@ -411,7 +421,7 @@ input, select { font: inherit; color: inherit; }
   text-decoration-thickness: 1px;
   text-decoration-color: color-mix(in srgb, var(--green) 40%, transparent);
 }
-.link::after { content: ''; position: absolute; inset: -13px 0; z-index: 1; }
+.link::after { content: ''; position: absolute; inset: -13px -10px; z-index: 1; }
 
 .fine { margin-top: 10px; font-size: 11.5px; line-height: 1.6; color: var(--muted); }
 .boot-foot { margin-top: 18px; text-align: center; font-size: 11px; color: var(--muted); }
@@ -583,7 +593,7 @@ input, select { font: inherit; color: inherit; }
   letter-spacing: 0.02em;
 }
 
-.alert.warn .pill { background: var(--amber); }
+.alert.warn .pill { background: var(--amber); color: var(--pill-ink); }
 
 .alert-p { margin-top: 10px; font-size: 13.5px; color: var(--ink-2); }
 .alert-p b { font-family: var(--mono); color: var(--ink); }
