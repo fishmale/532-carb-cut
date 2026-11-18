@@ -41,6 +41,10 @@
     var d = C.fromKey(key);
     return (d.getMonth() + 1) + '/' + d.getDate();
   }
+  function mdWd(key) {
+    var d = C.fromKey(key);
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + WD[d.getDay()];
+  }
 
   function toast(msg) {
     var el = $('#toast');
@@ -208,6 +212,37 @@
 
   /* ---------------- 今日 ---------------- */
 
+  /* 按吃过的次数排最近常吃，没记录过就用默认几样 */
+  function recentFoods(limit) {
+    var use = {};
+    Object.keys(state.foods || {}).forEach(function (k) {
+      (state.foods[k] || []).forEach(function (e) {
+        var f = null;
+        if (e.foodId) {
+          f = C.FOODS.filter(function (x) { return x.id === e.foodId; })[0];
+        }
+        if (!f) f = C.FOODS.filter(function (x) { return x.name === e.name; })[0];
+        if (!f) return;
+        var u = use[f.id] || (use[f.id] = { n: 0, last: '' });
+        u.n += 1;
+        if (k > u.last) u.last = k;
+      });
+    });
+    var list = C.FOODS.filter(function (f) { return use[f.id]; }).slice();
+    list.sort(function (a, b) {
+      var ua = use[a.id], ub = use[b.id];
+      if (ub.n !== ua.n) return ub.n - ua.n;
+      return ub.last > ua.last ? 1 : ub.last < ua.last ? -1 : 0;
+    });
+    ['rice', 'chicken', 'egg', 'milk', 'banana', 'oats'].forEach(function (id) {
+      if (list.length >= limit) return;
+      if (list.some(function (f) { return f.id === id; })) return;
+      var f = C.FOODS.filter(function (x) { return x.id === id; })[0];
+      if (f) list.push(f);
+    });
+    return list.slice(0, limit);
+  }
+
   function viewToday() {
     var todayKey = C.todayKey();
     var wk = C.weekOf(state.startDate, todayKey);
@@ -267,13 +302,14 @@
         macroRow('脂肪', 'm-fat', tot.fat, t.fat) +
         '<div class="carb-left"><span>今日碳水还可吃</span><b>' + leftCarb + ' g</b></div>' +
         '<div class="quickadd">' +
-          '<div class="quickadd-head"><span class="overline">快速添加</span><button type="button" class="link" data-act="open-custom">自定义一份</button></div>' +
+          '<div class="quickadd-head"><span class="overline">快速添加</span><button type="button" class="link" data-act="open-picker">全部食物 ' + C.FOODS.length + ' 种</button></div>' +
           '<div class="chips">' +
-            C.FOODS.map(function (f) {
+            recentFoods(6).map(function (f) {
               return '<button type="button" class="chip-food" data-act="open-food" data-food="' + f.id + '">' +
                 '<b>' + esc(f.name) + '</b><span>' + f.portion + ' g</span></button>';
             }).join('') +
           '</div>' +
+          '<button type="button" class="link quick-custom" data-act="open-custom">找不到？自定义一份</button>' +
         '</div>' +
       '</section>'
     );
@@ -408,6 +444,32 @@
       '</section>'
     );
 
+    var wList = state.weights.slice().sort(function (a, b) {
+      return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
+    }).slice(0, 12);
+
+    parts.push(
+      '<section class="card">' +
+        '<div class="card-head"><h2>每日记录</h2><button type="button" class="link" data-act="open-weigh">补记</button></div>' +
+        (wList.length
+          ? '<ul class="wlist">' + wList.map(function (w, i) {
+              var prev = wList[i + 1];
+              var d = prev ? w.kg - prev.kg : null;
+              var cls = d == null || Math.abs(d) < 0.05 ? '' : d < 0 ? 'good' : 'bad';
+              return '<li>' +
+                '<button type="button" class="wrow" data-act="edit-weigh" data-date="' + w.date + '">' +
+                  '<span class="wdate">' + mdWd(w.date) + '</span>' +
+                  '<span class="wval">' + n1(w.kg) + '<small> kg</small></span>' +
+                  '<span class="wdelta ' + cls + '">' + (d == null ? '—' : signed(d)) + '</span>' +
+                '<span class="wchev" aria-hidden="true">›</span>' +
+                '</button>' +
+              '</li>';
+            }).join('') + '</ul>'
+          : '<p class="empty">还没有记录。在上面输入今晨体重，或点「补记」选过去某一天。</p>') +
+        (wList.length ? '<p class="fine">每天一条，点某一行可以改那天的记录。</p>' : '') +
+      '</section>'
+    );
+
     var list = state.checkins.slice().sort(function (a, b) { return b.week - a.week; });
     parts.push(
       '<section class="card">' +
@@ -438,9 +500,10 @@
     if (pts.length < 2) return '<p class="empty">记录 2 天以上就能看到曲线。</p>';
 
     var W = 340, H = 178, L = 30, R = 12, T = 18, B = 24;
-    var t0 = C.fromKey(state.startDate).getTime();
+    var t0 = Math.min(C.fromKey(state.startDate).getTime(), C.fromKey(pts[0].date).getTime());
     var t1 = Math.max(C.fromKey(C.todayKey()).getTime(), C.fromKey(pts[pts.length - 1].date).getTime());
-    var span = Math.max(86400000 * 2, t1 - t0);
+    if (t1 <= t0) t1 = t0 + 86400000;
+    var span = t1 - t0;
     var startW = state.profile.weightStart;
     var perWeek = C.weeklyTargetKg(startW, state.plan.monthPct);
     var targetEnd = startW - perWeek * ((t1 - t0) / (7 * 86400000)) * 1.2;
@@ -502,8 +565,8 @@
     var ly = y(lastP.kg);
     svg += '<circle class="dot last" cx="' + lx.toFixed(1) + '" cy="' + ly.toFixed(1) + '" r="4.2"/>';
 
-    svg += '<text x="' + L + '" y="' + (H - 6) + '">' + md(state.startDate) + '</text>';
-    svg += '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">' + md(C.todayKey()) + '</text>';
+    svg += '<text x="' + L + '" y="' + (H - 6) + '">' + md(C.toKey(new Date(t0))) + '</text>';
+    svg += '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">' + md(C.toKey(new Date(t1))) + '</text>';
     svg += '</svg>';
     svg += '<div class="chart-foot"><span>起点 ' + n1(startW) + ' kg</span><span>现在 ' + n1(pts[pts.length - 1].kg) + ' kg</span></div>';
 
@@ -737,11 +800,15 @@
   /* ---------------- 底部面板 ---------------- */
 
   function openSheet(cfg) {
+    if (!sheet) rememberFocus();
     sheet = cfg;
+    var panel = $('#sheetLayer').querySelector('.sheet');
+    if (panel) { panel.style.animation = ''; panel.style.transform = ''; }
     $('#sheetBody').innerHTML = sheetHtml();
     $('#sheetLayer').hidden = false;
     document.body.classList.add('no-scroll');
     bindSheet();
+    if (sheet.type === 'picker') return;
     setTimeout(function () {
       var input = $('#sheetBody input');
       if (input) { try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); } }
@@ -753,10 +820,44 @@
     $('#sheetLayer').hidden = true;
     document.body.classList.remove('no-scroll');
     $('#sheetBody').innerHTML = '';
+    restoreFocus();
   }
 
-  function sheetHead(title, sub) {
-    return '<div class="sheet-head"><div><h3 id="sheetTitle">' + title + '</h3>' +
+  function bindSheetDrag() {
+    var layer = $('#sheetLayer');
+    var panel = layer.querySelector('.sheet');
+    var grip = layer.querySelector('.sheet-grip');
+    if (!panel || !grip) return;
+    var startY = 0, dy = 0, pid = null;
+    grip.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      pid = e.pointerId;
+      startY = e.clientY;
+      dy = 0;
+      panel.style.animation = 'none';
+      panel.style.transition = 'none';
+      try { grip.setPointerCapture(pid); } catch (err) {}
+    });
+    grip.addEventListener('pointermove', function (e) {
+      if (pid === null || e.pointerId !== pid) return;
+      dy = Math.max(0, e.clientY - startY);
+      panel.style.transform = 'translateY(' + dy + 'px)';
+    });
+    function end(e) {
+      if (pid === null || (e && e.pointerId !== pid)) return;
+      pid = null;
+      panel.style.transition = '';
+      panel.style.transform = '';
+      if (dy > 96) closeSheet();
+    }
+    grip.addEventListener('pointerup', end);
+    grip.addEventListener('pointercancel', end);
+  }
+
+  function sheetHead(title, sub, back) {
+    return '<div class="sheet-head">' +
+      (back ? '<button type="button" class="icon-btn" data-act="back-picker" aria-label="返回食材列表">‹</button>' : '') +
+      '<div class="sheet-head-main"><h3 id="sheetTitle">' + title + '</h3>' +
       (sub ? '<p class="sheet-sub">' + sub + '</p>' : '') + '</div>' +
       '<button type="button" class="icon-btn" data-act="close-sheet" aria-label="关闭">✕</button></div>';
   }
@@ -767,7 +868,7 @@
     if (sheet.type === 'food') {
       var f = sheet.food;
       return '<form data-form="add-food" data-food="' + f.id + '">' +
-        sheetHead(esc(f.name), '每 100 g：碳水 ' + f.carb + ' g · 蛋白 ' + f.protein + ' g · 脂肪 ' + f.fat + ' g') +
+        sheetHead(esc(f.name), '每 100 g：碳水 ' + f.carb + ' g · 蛋白 ' + f.protein + ' g · 脂肪 ' + f.fat + ' g', sheet.back) +
         '<div class="sheet-body">' +
           '<div class="grams-row">' +
             [50, 100, 150, 200, 250].map(function (g) {
@@ -779,6 +880,19 @@
         '</div>' +
         '<button class="btn primary block" type="submit">加入今日</button>' +
       '</form>';
+    }
+
+    if (sheet.type === 'picker') {
+      return '<div class="sheet-head">' +
+          '<div class="sheet-head-main"><h3 id="sheetTitle">选择食物</h3>' +
+          '<p class="sheet-sub">先点食物，再定克数</p></div>' +
+          '<button type="button" class="icon-btn" data-act="close-sheet" aria-label="关闭">✕</button>' +
+        '</div>' +
+        '<div class="sheet-body picker">' +
+          '<input id="foodSearch" class="field" type="search" placeholder="搜食物：米饭、鸡胸、牛奶…" aria-label="搜索食物" autocomplete="off">' +
+          '<div id="foodList">' + foodListHtml('') + '</div>' +
+          '<button type="button" class="btn ghost block" data-act="open-custom">自定义一份</button>' +
+        '</div>';
     }
 
     if (sheet.type === 'custom') {
@@ -798,12 +912,16 @@
     }
 
     if (sheet.type === 'weigh') {
-      var lastW = C.latestWeight(state);
-      return '<form data-form="weigh">' +
-        sheetHead('记录体重', '晨起、空腹、上完厕所，每天同一时间最准。') +
+      var wKey = sheet.date || C.todayKey();
+      var wVal = C.weightAt(state, wKey);
+      var isToday = wKey === C.todayKey();
+      return '<form data-form="weigh" data-date="' + wKey + '">' +
+        sheetHead(isToday ? '记录体重' : '补记体重', '晨起、空腹、上完厕所，每天同一时间最准。') +
         '<div class="sheet-body">' +
-          '<label class="input-wrap big"><input name="kg" type="number" inputmode="decimal" step="0.1" min="20" max="400" value="' + (lastW ? n1(lastW.kg) : '') + '" placeholder="0.0" aria-label="体重"><span class="suffix">kg</span></label>' +
-          '<p class="fine">第 7 天的记录会用于这一周的结算。</p>' +
+          '<label class="input-wrap big"><input name="kg" type="number" inputmode="decimal" step="0.1" min="20" max="400" value="' + (wVal != null ? n1(wVal) : '') + '" placeholder="0.0" aria-label="体重"><span class="suffix">kg</span></label>' +
+          '<div class="field" style="margin-top:12px"><label for="wDate">日期</label>' +
+            '<div class="input-wrap"><input id="wDate" name="date" type="date" value="' + wKey + '" max="' + C.todayKey() + '" aria-label="记录日期"></div></div>' +
+          '<p class="fine">每天可以记一次，同一天再记会覆盖；第 7 天的记录用于这一周结算。</p>' +
         '</div>' +
         '<button class="btn primary block" type="submit">保存</button>' +
       '</form>';
@@ -841,6 +959,17 @@
 
   function bindSheet() {
     if (!sheet) return;
+
+    if (sheet.type === 'picker') {
+      var search = $('#foodSearch');
+      var list = $('#foodList');
+      if (search && list) {
+        search.addEventListener('input', function () {
+          list.innerHTML = foodListHtml(search.value);
+        });
+      }
+      return;
+    }
 
     if (sheet.type === 'food') {
       var input = $('#foodGrams');
@@ -883,17 +1012,79 @@
     }
   }
 
-  function openFood(id) {
+  function openFood(id, fromPicker) {
     var f = C.FOODS.filter(function (x) { return x.id === id; })[0];
     if (!f) return;
-    openSheet({ type: 'food', food: f });
+    openSheet({ type: 'food', food: f, back: fromPicker ? 'picker' : null });
+  }
+
+  function foodRow(f) {
+    return '<button type="button" class="food-row" data-act="open-food" data-food="' + f.id + '">' +
+      '<span class="food-name">' + esc(f.name) + '</span>' +
+      '<span class="food-meta">碳水 ' + f.carb + ' g / 100 g</span>' +
+      '<span class="food-go" aria-hidden="true">›</span>' +
+    '</button>';
+  }
+
+  function foodListHtml(q) {
+    q = String(q || '').trim();
+    var items = C.FOODS.filter(function (f) { return !q || f.name.indexOf(q) >= 0; });
+
+    if (q) {
+      if (!items.length) return '<p class="empty">没找到「' + esc(q) + '」，可以自己填一份。</p>';
+      return '<div class="food-rows">' + items.map(foodRow).join('') + '</div>';
+    }
+
+    var html = '<div class="food-group"><div class="food-group-title">最近常吃</div>' +
+      '<div class="food-rows">' + recentFoods(4).map(foodRow).join('') + '</div></div>';
+
+    C.FOOD_GROUPS.forEach(function (g) {
+      var rows = C.FOODS.filter(function (f) { return f.g === g.key; });
+      if (!rows.length) return;
+      html += '<div class="food-group"><div class="food-group-title">' + g.label + '</div>' +
+        '<div class="food-rows">' + rows.map(foodRow).join('') + '</div></div>';
+    });
+
+    return html;
   }
 
   /* ---------------- 弹窗 ---------------- */
 
   var confirmHandler = null;
+  var lastFocus = null;
+
+  function rememberFocus() {
+    lastFocus = document.activeElement && document.activeElement.focus ? document.activeElement : null;
+  }
+
+  function restoreFocus() {
+    if (lastFocus && document.contains(lastFocus)) {
+      try { lastFocus.focus({ preventScroll: true }); } catch (e) { lastFocus.focus(); }
+    }
+    lastFocus = null;
+  }
+
+  function focusables(box) {
+    var sel = 'button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    return Array.prototype.slice.call(box.querySelectorAll(sel)).filter(function (el) {
+      return el.getClientRects().length > 0;
+    });
+  }
+
+  function wrapFocus(box, backwards) {
+    var list = focusables(box);
+    if (!list.length) return;
+    var active = document.activeElement;
+    var inside = box.contains(active);
+    if (backwards) {
+      if (!inside || active === list[0]) list[list.length - 1].focus();
+    } else if (!inside || active === list[list.length - 1]) {
+      list[0].focus();
+    }
+  }
 
   function askConfirm(title, body, okLabel, onOk, danger) {
+    rememberFocus();
     $('#modalTitle').textContent = title;
     $('#modalBody').textContent = body;
     var ok = $('#modalOk');
@@ -906,6 +1097,7 @@
   function closeModal() {
     $('#modalLayer').hidden = true;
     confirmHandler = null;
+    restoreFocus();
   }
 
   /* ---------------- 业务动作 ---------------- */
@@ -916,6 +1108,7 @@
     if (!state.foods[key]) state.foods[key] = [];
     state.foods[key].push({
       id: C.newId(),
+      foodId: food.id,
       name: food.name,
       grams: Math.round(grams),
       carb: m.carb,
@@ -1105,12 +1298,14 @@
     if (type === 'weigh') {
       var kg = parseFloat(form.kg.value);
       if (!(kg >= 20 && kg <= 400)) { toast('体重看起来不太对'); return; }
+      var key = (form.date && form.date.value) || form.dataset.date || C.todayKey();
+      if (C.diffDaysKeys(key, C.todayKey()) < 0) { toast('还不能记以后的体重'); return; }
       var isSheet = !!form.closest('#sheetBody');
-      C.upsertWeight(state, C.todayKey(), kg);
+      C.upsertWeight(state, key, kg);
       saveState();
       if (isSheet) closeSheet();
       render();
-      toast('已记录 ' + n1(kg) + ' kg');
+      toast('已记录 ' + n1(kg) + ' kg' + (key === C.todayKey() ? '' : '（' + md(key) + '）'));
       return;
     }
 
@@ -1170,9 +1365,14 @@
     switch (act) {
       case 'close-sheet': closeSheet(); break;
       case 'close-modal': closeModal(); break;
-      case 'open-food': openFood(el.dataset.food); break;
+      case 'open-food': openFood(el.dataset.food, sheet && sheet.type === 'picker'); break;
+      case 'open-picker': openSheet({ type: 'picker' }); break;
+      case 'back-picker': openSheet({ type: 'picker' }); break;
       case 'open-custom': openSheet({ type: 'custom' }); break;
-      case 'open-weigh': openSheet({ type: 'weigh' }); break;
+      case 'open-weigh': openSheet({ type: 'weigh', date: el.dataset.date || C.todayKey() }); break;
+      case 'edit-weigh':
+        openSheet({ type: 'weigh', date: el.dataset.date });
+        break;
       case 'open-profile': openProfile(); break;
       case 'del-food':
         var key = C.todayKey();
@@ -1215,6 +1415,7 @@
   }
 
   function initEvents() {
+    bindSheetDrag();
     document.addEventListener('click', function (e) {
       var tab = e.target.closest('.tab');
       if (tab && tab.dataset.view) {
@@ -1278,9 +1479,17 @@
     });
 
     document.addEventListener('keydown', function (e) {
-      if (e.key !== 'Escape') return;
-      if (!$('#modalLayer').hidden) closeModal();
-      else if (!$('#sheetLayer').hidden) closeSheet();
+      if (e.key === 'Escape') {
+        if (!$('#modalLayer').hidden) closeModal();
+        else if (!$('#sheetLayer').hidden) closeSheet();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      var box = !$('#modalLayer').hidden ? $('#modalLayer') : (!$('#sheetLayer').hidden ? $('#sheetLayer') : null);
+      if (!box) return;
+      var before = document.activeElement;
+      wrapFocus(box, e.shiftKey);
+      if (document.activeElement !== before) e.preventDefault();
     });
 
     window.addEventListener('beforeinstallprompt', function (e) {

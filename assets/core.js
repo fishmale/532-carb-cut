@@ -28,27 +28,36 @@
 
   /* 常见食物，数值为每 100 g 的近似值（g） */
   var FOODS = [
-    { id: 'rice', name: '米饭（熟）', carb: 25.9, protein: 2.6, fat: 0.3, portion: 150 },
-    { id: 'noodle', name: '面条（熟）', carb: 24.9, protein: 4.5, fat: 0.5, portion: 150 },
-    { id: 'mantou', name: '馒头', carb: 47.0, protein: 7.0, fat: 1.1, portion: 100 },
-    { id: 'bread', name: '全麦面包', carb: 43.0, protein: 9.0, fat: 3.4, portion: 80 },
-    { id: 'oats', name: '燕麦片（干）', carb: 66.0, protein: 15.0, fat: 7.0, portion: 50 },
-    { id: 'sweetpot', name: '红薯', carb: 20.1, protein: 1.6, fat: 0.2, portion: 200 },
-    { id: 'potato', name: '土豆', carb: 17.2, protein: 2.0, fat: 0.2, portion: 200 },
-    { id: 'corn', name: '玉米（煮）', carb: 22.8, protein: 4.0, fat: 1.2, portion: 150 },
-    { id: 'pasta', name: '意面（干）', carb: 75.0, protein: 12.0, fat: 1.5, portion: 80 },
-    { id: 'banana', name: '香蕉', carb: 22.0, protein: 1.4, fat: 0.2, portion: 120 },
-    { id: 'apple', name: '苹果', carb: 13.5, protein: 0.3, fat: 0.2, portion: 200 },
-    { id: 'chicken', name: '鸡胸肉', carb: 0.0, protein: 31.0, fat: 3.6, portion: 150 },
-    { id: 'egg', name: '鸡蛋', carb: 0.7, protein: 13.0, fat: 9.0, portion: 50 },
-    { id: 'beef', name: '牛肉（瘦）', carb: 0.0, protein: 26.0, fat: 8.0, portion: 150 },
-    { id: 'salmon', name: '三文鱼', carb: 0.0, protein: 20.0, fat: 13.0, portion: 120 },
-    { id: 'tofu', name: '豆腐', carb: 2.0, protein: 8.0, fat: 4.0, portion: 200 },
-    { id: 'milk', name: '牛奶', carb: 4.8, protein: 3.3, fat: 3.6, portion: 250 },
-    { id: 'yogurt', name: '无糖酸奶', carb: 5.0, protein: 4.0, fat: 3.0, portion: 150 },
-    { id: 'whey', name: '乳清蛋白粉', carb: 3.0, protein: 80.0, fat: 5.0, portion: 30 },
-    { id: 'almond', name: '杏仁', carb: 22.0, protein: 21.0, fat: 50.0, portion: 20 },
-    { id: 'oil', name: '食用油', carb: 0.0, protein: 0.0, fat: 100.0, portion: 10 }
+    { g: 'staple', id: 'rice', name: '米饭（熟）', carb: 25.9, protein: 2.6, fat: 0.3, portion: 150 },
+    { g: 'staple', id: 'noodle', name: '面条（熟）', carb: 24.9, protein: 4.5, fat: 0.5, portion: 150 },
+    { g: 'staple', id: 'mantou', name: '馒头', carb: 47.0, protein: 7.0, fat: 1.1, portion: 100 },
+    { g: 'staple', id: 'bread', name: '全麦面包', carb: 43.0, protein: 9.0, fat: 3.4, portion: 80 },
+    { g: 'staple', id: 'oats', name: '燕麦片（干）', carb: 66.0, protein: 15.0, fat: 7.0, portion: 50 },
+    { g: 'staple', id: 'sweetpot', name: '红薯', carb: 20.1, protein: 1.6, fat: 0.2, portion: 200 },
+    { g: 'staple', id: 'potato', name: '土豆', carb: 17.2, protein: 2.0, fat: 0.2, portion: 200 },
+    { g: 'staple', id: 'corn', name: '玉米（煮）', carb: 22.8, protein: 4.0, fat: 1.2, portion: 150 },
+    { g: 'staple', id: 'pasta', name: '意面（干）', carb: 75.0, protein: 12.0, fat: 1.5, portion: 80 },
+    { g: 'fruit', id: 'banana', name: '香蕉', carb: 22.0, protein: 1.4, fat: 0.2, portion: 120 },
+    { g: 'fruit', id: 'apple', name: '苹果', carb: 13.5, protein: 0.3, fat: 0.2, portion: 200 },
+    { g: 'protein', id: 'chicken', name: '鸡胸肉', carb: 0.0, protein: 31.0, fat: 3.6, portion: 150 },
+    { g: 'protein', id: 'egg', name: '鸡蛋', carb: 0.7, protein: 13.0, fat: 9.0, portion: 50 },
+    { g: 'protein', id: 'beef', name: '牛肉（瘦）', carb: 0.0, protein: 26.0, fat: 8.0, portion: 150 },
+    { g: 'protein', id: 'salmon', name: '三文鱼', carb: 0.0, protein: 20.0, fat: 13.0, portion: 120 },
+    { g: 'protein', id: 'tofu', name: '豆腐', carb: 2.0, protein: 8.0, fat: 4.0, portion: 200 },
+    { g: 'dairy', id: 'milk', name: '牛奶', carb: 4.8, protein: 3.3, fat: 3.6, portion: 250 },
+    { g: 'dairy', id: 'yogurt', name: '无糖酸奶', carb: 5.0, protein: 4.0, fat: 3.0, portion: 150 },
+    { g: 'dairy', id: 'whey', name: '乳清蛋白粉', carb: 3.0, protein: 80.0, fat: 5.0, portion: 30 },
+    { g: 'fat', id: 'almond', name: '杏仁', carb: 22.0, protein: 21.0, fat: 50.0, portion: 20 },
+    { g: 'fat', id: 'oil', name: '食用油', carb: 0.0, protein: 0.0, fat: 100.0, portion: 10 }
+  ];
+
+  /* 食物分组，用于选择器里的分区展示 */
+  var FOOD_GROUPS = [
+    { key: 'staple', label: '主食' },
+    { key: 'protein', label: '蛋白' },
+    { key: 'fruit', label: '水果' },
+    { key: 'dairy', label: '乳制品' },
+    { key: 'fat', label: '坚果油脂' }
   ];
 
   /* ---------- 数字 ---------- */
@@ -377,6 +386,7 @@
     ACTIVITY: ACTIVITY,
     ACTIVITY_LIST: ACTIVITY_LIST,
     FOODS: FOODS,
+    FOOD_GROUPS: FOOD_GROUPS,
 
     round: round, toNum: toNum, clamp: clamp,
     toKey: toKey, fromKey: fromKey, todayKey: todayKey,
