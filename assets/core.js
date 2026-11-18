@@ -282,6 +282,7 @@
       foods: {},
       cheats: [],
       workouts: [],
+      favorites: [],
       settings: { theme: 'auto' }
     };
   }
@@ -329,6 +330,48 @@
     var byType = {};
     list.forEach(function (w) { byType[w.type] = (byType[w.type] || 0) + w.minutes; });
     return { count: list.length, minutes: minutes, byType: byType };
+  }
+
+  /* 最近 n 周的训练量（按 532 的周切分，含本周；无记录为 0） */
+  function weeklyWorkouts(state, weeks) {
+    weeks = Math.max(1, Math.round(toNum(weeks, 6)));
+    var list = state.workouts || [];
+    var cur = Math.max(1, Math.floor(diffDaysKeys(state.startDate, todayKey()) / 7) + 1);
+    var out = [];
+    for (var i = weeks - 1; i >= 0; i--) {
+      var wk = cur - i;
+      if (wk < 1) { out.push({ week: wk, minutes: 0, count: 0, current: false }); continue; }
+      var from = addDaysKey(state.startDate, 7 * (wk - 1));
+      var to = addDaysKey(state.startDate, 7 * wk - 1);
+      var minutes = 0, count = 0;
+      list.forEach(function (w) {
+        if (w.date >= from && w.date <= to) { minutes += w.minutes; count++; }
+      });
+      out.push({ week: wk, from: from, to: to, minutes: minutes, count: count, current: wk === cur });
+    }
+    return out;
+  }
+
+  /* 收藏（置顶在食物选择器里） */
+  function isFavorite(state, id) {
+    return (state.favorites || []).indexOf(id) >= 0;
+  }
+
+  function toggleFavorite(state, id) {
+    state.favorites = state.favorites || [];
+    var i = state.favorites.indexOf(id);
+    if (i >= 0) { state.favorites.splice(i, 1); return false; }
+    state.favorites.push(id);
+    return true;
+  }
+
+  function favoriteFoods(state) {
+    var ids = state.favorites || [];
+    var out = [];
+    ids.forEach(function (id) {
+      for (var i = 0; i < FOODS.length; i++) if (FOODS[i].id === id) { out.push(FOODS[i]); return; }
+    });
+    return out;
   }
 
   /* 按新资料 / 体重重算基准（保留已下调的碳水） */
@@ -534,6 +577,10 @@
     addWorkout: addWorkout,
     removeWorkout: removeWorkout,
     workoutStats: workoutStats,
+    weeklyWorkouts: weeklyWorkouts,
+    isFavorite: isFavorite,
+    toggleFavorite: toggleFavorite,
+    favoriteFoods: favoriteFoods,
 
     round: round, toNum: toNum, clamp: clamp,
     toKey: toKey, fromKey: fromKey, todayKey: todayKey,

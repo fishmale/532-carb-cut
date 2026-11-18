@@ -498,6 +498,26 @@
 
     var wkStat = C.workoutStats(state, weekStartKey);
     var recentWorkouts = (state.workouts || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 4);
+    var wkBars = C.weeklyWorkouts(state, 6).filter(function (x) { return x.week >= 1; });
+    var wkMax = 30;
+    wkBars.forEach(function (x) { if (x.minutes > wkMax) wkMax = x.minutes; });
+    var wkSum = wkBars.reduce(function (s, x) { return s + x.minutes; }, 0);
+    var wkAria = '最近 6 周训练量（分钟）：' + wkBars.map(function (x) {
+      return '第 ' + x.week + ' 周 ' + x.minutes;
+    }).join('，') + '。';
+    var wkChart = wkSum > 0
+      ? '<div class="tchart" role="img" aria-label="' + wkAria + '">' +
+          '<div class="tchart-head"><span class="overline">最近 6 周</span><span class="muted small">分钟</span></div>' +
+          '<div class="tbars">' + wkBars.map(function (x) {
+            var h = x.minutes ? Math.max(6, Math.round((x.minutes / wkMax) * 44)) : 3;
+            return '<div class="tb' + (x.current ? ' is-now' : '') + (x.minutes ? '' : ' is-zero') + '">' +
+              '<b>' + (x.minutes || '') + '</b>' +
+              '<i style="height:' + h + 'px"></i>' +
+              '<span>' + x.week + '</span>' +
+            '</div>';
+          }).join('') + '</div>' +
+        '</div>'
+      : '';
     parts.push(
       '<section class="card">' +
         '<div class="card-head"><h2>训练</h2><button type="button" class="link" data-act="open-workout">记一次</button></div>' +
@@ -506,6 +526,7 @@
           '<div><span class="k">本周时长</span><b>' + wkStat.minutes + '<small> 分钟</small></b></div>' +
           '<div><span class="k">记录总数</span><b>' + (state.workouts || []).length + '<small> 次</small></b></div>' +
         '</div>' +
+        wkChart +
         (recentWorkouts.length
           ? '<ul class="wlist">' + recentWorkouts.map(function (w) {
               return '<li>' +
@@ -1179,11 +1200,17 @@
   }
 
   function foodRow(f) {
-    return '<button type="button" class="food-row" data-act="open-food" data-food="' + f.id + '">' +
-      '<span class="food-name">' + esc(f.name) + '</span>' +
-      '<span class="food-meta">碳水 ' + f.carb + ' g · ' + foodKcal(f) + ' kcal</span>' +
-      '<span class="food-go" aria-hidden="true">›</span>' +
-    '</button>';
+    var fav = C.isFavorite(state, f.id);
+    return '<div class="food-row">' +
+      '<button type="button" class="food-main" data-act="open-food" data-food="' + f.id + '">' +
+        '<span class="food-name">' + esc(f.name) + '</span>' +
+        '<span class="food-meta">碳水 ' + f.carb + ' g · ' + foodKcal(f) + ' kcal</span>' +
+        '<span class="food-go" aria-hidden="true">›</span>' +
+      '</button>' +
+      '<button type="button" class="fav-btn' + (fav ? ' is-on' : '') + '" data-act="fav-food" data-id="' + f.id + '"' +
+        ' aria-pressed="' + (fav ? 'true' : 'false') + '" aria-label="' + (fav ? '取消收藏 ' : '收藏 ') + esc(f.name) + '">' +
+        (fav ? '★' : '☆') + '</button>' +
+    '</div>';
   }
 
   function foodMatch(f, q) {
@@ -1222,8 +1249,17 @@
         '<div class="food-rows">' + items.map(foodRow).join('') + '</div></div>';
     }
 
-    var html = '<div class="food-group"><div class="food-group-title">最近常吃</div>' +
-      '<div class="food-rows">' + recentFoods(4).map(foodRow).join('') + '</div></div>';
+    var html = '';
+    var favs = C.favoriteFoods(state);
+    if (favs.length) {
+      html += '<div class="food-group"><div class="food-group-title">收藏 · ' + favs.length + ' 种</div>' +
+        '<div class="food-rows">' + favs.map(foodRow).join('') + '</div></div>';
+    }
+    var recents = recentFoods(4).filter(function (f) { return !C.isFavorite(state, f.id); });
+    if (recents.length) {
+      html += '<div class="food-group"><div class="food-group-title">最近常吃</div>' +
+        '<div class="food-rows">' + recents.map(foodRow).join('') + '</div></div>';
+    }
 
     C.FOOD_GROUPS.forEach(function (g) {
       var rows = C.FOODS.filter(function (f) { return f.g === g.key; });
@@ -1576,6 +1612,19 @@
         var flist = $('#foodList');
         var fsearch = $('#foodSearch');
         if (flist) flist.innerHTML = foodListHtml(fsearch ? fsearch.value : '', sheet.group);
+        break;
+      case 'fav-food':
+        if (!sheet) break;
+        var favOn = C.toggleFavorite(state, el.dataset.id);
+        saveState();
+        var favList = $('#foodList');
+        if (favList) {
+          var favSearch = $('#foodSearch');
+          var favTop = favList.scrollTop;
+          favList.innerHTML = foodListHtml(favSearch ? favSearch.value : '', sheet.group);
+          favList.scrollTop = favTop;
+        }
+        toast(favOn ? '已收藏，置顶在列表里' : '已取消收藏');
         break;
       case 'back-picker': openSheet({ type: 'picker' }); break;
       case 'open-custom': openSheet({ type: 'custom' }); break;

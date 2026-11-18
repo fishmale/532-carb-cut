@@ -983,22 +983,59 @@ input, select { font: inherit; color: inherit; }
 .food-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 2px;
   width: 100%;
+  min-height: 48px;
+  border-bottom: 1px solid var(--line);
+}
+.food-row:last-child { border-bottom: 0; }
+
+.food-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
   min-height: 48px;
   padding: 10px 2px;
   border: 0;
-  border-bottom: 1px solid var(--line);
   background: none;
   color: var(--ink);
   text-align: left;
   cursor: pointer;
 }
-.food-row:last-child { border-bottom: 0; }
-.food-row:active { background: var(--card-2); }
+.food-main:active { background: var(--card-2); }
+
+.fav-btn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 12px;
+}
+.fav-btn.is-on { color: var(--amber); }
+.fav-btn:active { background: var(--card-2); }
 .food-name { flex: 1; min-width: 0; font-size: 0.9375rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .food-meta { flex: none; font-size: 0.7188rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .food-go { flex: none; font-size: 1.0625rem; color: var(--muted); }
+
+/* 训练量小图 */
+.tchart { margin: 12px 0 2px; }
+.tchart-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+.tbars { display: flex; align-items: flex-end; gap: 6px; height: 66px; }
+.tb { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
+.tb b { font-family: var(--mono); font-size: 0.6875rem; color: var(--muted); line-height: 1; }
+.tb i { display: block; width: 100%; max-width: 44px; border-radius: 6px 6px 3px 3px; background: var(--card-2); }
+.tb.is-now i { background: var(--green); }
+.tb.is-zero i { background: var(--line); }
+.tb span { font-size: 0.6875rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* 每日体重记录 */
 .wlist { list-style: none; margin: 4px 0 0; padding: 0; }

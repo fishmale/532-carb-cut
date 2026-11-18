@@ -138,5 +138,32 @@ ok('workouts add, stats and remove', () => {
   assert.equal(C.workoutStats(s, C.addDaysKey(C.todayKey(), -6)).minutes, 30);
 });
 
+ok('weekly workouts bucket by 532 weeks', () => {
+  const s = C.createState({ sex: 'male', age: 30, height: 178, weight: 85, activity: 'hobby' });
+  s.startDate = C.addDaysKey(C.todayKey(), -20);
+  C.addWorkout(s, { date: C.todayKey(), type: 'strength', minutes: 40 });
+  C.addWorkout(s, { date: C.addDaysKey(C.todayKey(), -7), type: 'cardio', minutes: 25 });
+  C.addWorkout(s, { date: C.addDaysKey(C.todayKey(), -8), type: 'cardio', minutes: 10 });
+  const w = C.weeklyWorkouts(s, 6);
+  assert.equal(w.length, 6);
+  assert.equal(w[5].current, true);
+  assert.equal(w[5].minutes, 40);
+  assert.equal(w[4].minutes, 35);
+  assert.equal(w[0].minutes, 0);
+  assert.equal(w.reduce((a, x) => a + x.minutes, 0), 75);
+});
+
+ok('favorites toggle and order', () => {
+  const s = C.createState({ sex: 'male', age: 30, height: 178, weight: 85, activity: 'hobby' });
+  assert.equal(C.favoriteFoods(s).length, 0);
+  assert.equal(C.toggleFavorite(s, 'rice'), true);
+  assert.equal(C.toggleFavorite(s, 'egg'), true);
+  assert.equal(C.isFavorite(s, 'egg'), true);
+  assert.deepEqual(C.favoriteFoods(s).map((f) => f.id), ['rice', 'egg']);
+  assert.equal(C.toggleFavorite(s, 'rice'), false);
+  assert.deepEqual(C.favoriteFoods(s).map((f) => f.id), ['egg']);
+  assert.equal(C.isFavorite(s, 'rice'), false);
+});
+
 console.log(process.exitCode ? 'FAILED' : 'all good');
 
