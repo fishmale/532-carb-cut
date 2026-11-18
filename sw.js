@@ -5,7 +5,7 @@
  *
  * 发版：把下面 V 加 1，并同步改 index.html 里三处 ?v=（app.css / core.js / app.js）。
  */
-var V = '18';
+var V = '19';
 var CACHE = 'carb532-v' + V;
 var SHELL = [
   './',
@@ -33,20 +33,21 @@ self.addEventListener('install', function (event) {
 
 self.addEventListener('activate', function (event) {
   event.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(keys.map(function (k) {
-        if (k !== CACHE) return caches.delete(k);
-      }));
-    }).then(function () {
-      return self.clients.claim();
-    })
+    caches.keys()
+      .then(function (keys) {
+        return Promise.all(keys.map(function (k) {
+          if (k !== CACHE) return caches.delete(k);
+        }));
+      })
+      .then(function () {
+        return self.clients.claim();
+      })
   );
 });
 
 self.addEventListener('fetch', function (event) {
   var req = event.request;
   if (req.method !== 'GET') return;
-
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 

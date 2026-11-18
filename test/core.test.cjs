@@ -194,5 +194,26 @@ ok('week review gathers weight, carb and work', () => {
   assert.equal(cur.status, 'open');
 });
 
+ok('monthly review trends', () => {
+  const s = C.createState({ sex: 'male', age: 30, height: 178, weight: 85, activity: 'hobby' });
+  s.startDate = C.addDaysKey(C.todayKey(), -20);
+  s.weights = [
+    { date: s.startDate, kg: 85.0 },
+    { date: C.addDaysKey(s.startDate, 7), kg: 84.6 }
+  ];
+  s.foods[C.addDaysKey(s.startDate, 1)] = [
+    { id: 'rice', name: '米饭', grams: 300, carb: 77.7, protein: 7.8, fat: 0.9 }
+  ];
+  C.addWorkout(s, { date: C.addDaysKey(s.startDate, 8), type: 'strength', minutes: 45 });
+  const m = C.monthlyReview(s, 3);
+  assert.equal(m.weeks.length, 3);
+  assert.equal(m.weeks[0].carbAvg, 78);
+  assert.equal(m.weeks[0].carbDays, 1);
+  assert.equal(m.weeks[1].carbAvg, null);
+  assert.equal(m.weeks[1].weightEnd, 84.6);
+  assert.equal(m.weeks[1].minutes, 45);
+  assert.equal(m.weeks[2].isCurrent, true);
+});
+
 console.log(process.exitCode ? 'FAILED' : 'all good');
 

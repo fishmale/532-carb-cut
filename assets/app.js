@@ -714,14 +714,25 @@
       var cls = d.over ? ' is-over' : (!d.logged ? ' is-empty' : '');
       return '<div class="rv-bar' + cls + '">' +
         '<span class="rv-val">' + (d.logged ? n0(d.carb) : '') + '</span>' +
-        '<i style="height:' + Math.max(3, Math.round(pct * 0.46)) + 'px"></i>' +
+        '<div class="rv-plot"><u class="rv-goal"></u>' +
+          '<i style="height:' + Math.max(3, Math.round(pct * 0.46)) + 'px"></i></div>' +
         '<span class="rv-day">' + md(d.key).replace('/', '/') + '</span>' +
       '</div>';
     }).join('');
+    var future = '';
+    if (r.isCurrent) {
+      for (var fi = r.carb.days.length; fi < 7; fi++) {
+        future += '<div class="rv-bar is-future" aria-hidden="true">' +
+          '<span class="rv-val"></span>' +
+          '<div class="rv-plot"><u class="rv-goal"></u><i style="height:0"></i></div>' +
+          '<span class="rv-day">' + md(C.addDaysKey(r.from, fi)).replace('/', '/') + '</span>' +
+        '</div>';
+      }
+    }
     parts.push(
       '<section class="card">' +
-        '<div class="card-head"><h2>每日碳水</h2><span class="muted small">目标 ' + n0(r.carb.target) + ' g / 天</span></div>' +
-        '<div class="rv-bars" role="img" aria-label="' + esc('本周每日碳水：' + r.carb.days.map(function (d) { return md(d.key) + ' ' + n0(d.carb) + ' 克'; }).join('，')) + '">' + bars + '</div>' +
+        '<div class="card-head"><h2>每日碳水</h2><span class="muted small">目标 ' + n0(r.carb.target) + ' g / 天 · 虚线</span></div>' +
+        '<div class="rv-bars" role="img" aria-label="' + esc('本周每日碳水：' + r.carb.days.map(function (d) { return md(d.key) + ' ' + n0(d.carb) + ' 克'; }).join('，')) + '">' + bars + future + '</div>' +
         '<p class="rv-note">' + (r.carb.logged ? '记了 ' + r.carb.logged + ' 天的碳水，剩下的照 5:3:2 吃满就行。' : '这周还没记过吃的，点「今日 → 全部食物」开始。') + '</p>' +
       '</section>'
     );
@@ -750,7 +761,61 @@
       '</section>'
     );
 
+    parts.push(trendCard());
+
     return parts.join('');
+  }
+
+  /* 近 8 周趋势：周末体重折线 + 每周平均碳水 */
+  function trendCard() {
+    var m = C.monthlyReview(state, 8);
+    var list = m.weeks;
+    var weights = list.filter(function (w) { return w.weightEnd != null; });
+    var head = '<div class="card-head"><h2>近 ' + list.length + ' 周</h2>' +
+      '<span class="muted small">体重 · 平均碳水</span></div>';
+
+    var chart;
+    if (weights.length < 2) {
+      chart = '<p class="empty">再记 ' + (2 - weights.length) + ' 周体重，这里就会出现趋势线。</p>';
+    } else {
+      var W = 320, H = 84, P = 14;
+      var ys = weights.map(function (w) { return w.weightEnd; });
+      var lo = Math.min.apply(null, ys) - 0.4, hi = Math.max.apply(null, ys) + 0.4;
+      if (hi - lo < 0.8) { hi = lo + 0.8; }
+      function px(i) { return P + (list.length === 1 ? 0 : i / (list.length - 1)) * (W - 2 * P); }
+      function py(v) { return H - P - ((v - lo) / (hi - lo)) * (H - 2 * P); }
+      var pts = [];
+      list.forEach(function (w, i) { if (w.weightEnd != null) pts.push([px(i), py(w.weightEnd)]); });
+      var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
+      var dots = pts.map(function (p) { return '<circle class="dot" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.8"/>'; }).join('');
+      var last = pts[pts.length - 1];
+      chart = '<svg class="chart trend" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' +
+        esc('近 ' + list.length + ' 周周末体重：' + weights.map(function (w) { return '第' + w.week + '周 ' + n1(w.weightEnd) + ' 公斤'; }).join('，')) + '">' +
+        '<path class="line" d="' + d + '"/>' + dots +
+        '<text class="cap" x="' + last[0].toFixed(1) + '" y="' + (last[1] - 8).toFixed(1) + '" text-anchor="end">' + n1(weights[weights.length - 1].weightEnd) + '</text>' +
+      '</svg>';
+    }
+
+    var weeks = list.map(function (w) {
+      var pct = w.carbAvg != null ? Math.min(100, (w.carbAvg / w.carbTarget) * 100) : 0;
+      var cls = w.carbAvg == null ? ' is-empty' : (w.carbAvg > w.carbTarget + 0.5 ? ' is-over' : '');
+      return '<div class="rv-bar' + cls + '">' +
+        '<span class="rv-val">' + (w.carbAvg != null ? n0(w.carbAvg) : '') + '</span>' +
+        '<div class="rv-plot"><u class="rv-goal"></u>' +
+          '<i style="height:' + Math.max(3, Math.round(pct * 0.46)) + 'px"></i></div>' +
+        '<span class="rv-day">' + w.week + '</span>' +
+      '</div>';
+    }).join('');
+
+    return '<section class="card">' + head +
+      chart +
+      '<div class="rv-bars small" role="img" aria-label="' +
+        esc('近 ' + list.length + ' 周平均每日碳水：' + list.map(function (w) { return '第' + w.week + '周 ' + (w.carbAvg == null ? '无记录' : n0(w.carbAvg) + ' 克'); }).join('，')) + '">' + weeks + '</div>' +
+      '<p class="rv-note">柱子是每周的平均每日碳水，只算有记录的天；虚线是当前目标。' +
+        (list.some(function (w) { return w.minutes > 0; })
+          ? ' 这 ' + list.length + ' 周共训练 ' + list.reduce(function (s, w) { return s + w.minutes; }, 0) + ' 分钟。'
+          : '') + '</p>' +
+    '</section>';
   }
 
   /* ---------------- 方案 ---------------- */

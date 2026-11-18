@@ -411,6 +411,29 @@
     };
   }
 
+  /* 近 N 周趋势：每周收尾体重 + 平均每日碳水 + 训练分钟 */
+  function monthlyReview(state, weeks) {
+    weeks = Math.max(1, Math.round(toNum(weeks, 8)));
+    var cur = Math.max(1, Math.floor(diffDaysKeys(state.startDate, todayKey()) / 7) + 1);
+    var first = Math.max(1, cur - weeks + 1);
+    var out = [];
+    for (var w = first; w <= cur; w++) {
+      var r = weekReview(state, w);
+      var logged = r.carb.days.filter(function (d) { return d.logged; });
+      var avg = logged.length
+        ? round(logged.reduce(function (s, d) { return s + d.carb; }, 0) / logged.length, 0)
+        : null;
+      out.push({
+        week: w, from: r.from, to: r.to, isCurrent: r.isCurrent,
+        weightEnd: r.weight.end, weightChange: r.weight.change,
+        carbAvg: avg, carbDays: logged.length, carbTarget: r.carb.target,
+        minutes: r.workout.minutes, sessions: r.workout.count,
+        status: r.status
+      });
+    }
+    return { weeks: out, current: cur, from: first };
+  }
+
   /* 收藏（置顶在食物选择器里） */
   function isFavorite(state, id) {    return (state.favorites || []).indexOf(id) >= 0;
   }
@@ -636,6 +659,7 @@
     removeWorkout: removeWorkout,
     workoutStats: workoutStats,
     weekReview: weekReview,
+    monthlyReview: monthlyReview,
     weeklyWorkouts: weeklyWorkouts,
     isFavorite: isFavorite,
     toggleFavorite: toggleFavorite,
