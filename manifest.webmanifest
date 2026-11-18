@@ -1,0 +1,36 @@
+{
+  "name": "532 碳降 · 碳水渐降减脂",
+  "short_name": "532 碳降",
+  "description": "先算一次热量，按 5:3:2 分配，之后每周只调碳水。第 7 天空腹称重，达标不动，未达标 3 天后降 15–30 g 碳水。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#F2EFE6",
+  "theme_color": "#F2EFE6",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

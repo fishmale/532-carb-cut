@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>532 碳降 · 碳水渐降减脂</title>
+<meta name="description" content="532 碳水渐降减脂法：先算一次热量，按 5:3:2 分配，之后每周只调碳水。">
+<meta name="theme-color" content="#F2EFE6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12140F" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="532 碳降">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ 首次设置 ============ -->
+  <section id="boot" class="boot">
+    <div class="boot-inner">
+      <header class="boot-head">
+        <div class="mark" aria-hidden="true"><i></i><i></i><i></i></div>
+        <p class="eyebrow">碳水渐降 · 减脂</p>
+        <h1>532 碳降</h1>
+        <p class="lede">算一次热量，之后只动碳水。第 7 天空腹称重：达标不动，未达标等 3 天再降 15 g。</p>
+      </header>
+
+      <form id="setupForm" class="panel" novalidate>
+        <div class="field">
+          <label id="sexLabel">性别</label>
+          <div class="seg" role="group" aria-labelledby="sexLabel">
+            <button type="button" class="seg-btn is-on" data-sex="male" aria-pressed="true">男</button>
+            <button type="button" class="seg-btn" data-sex="female" aria-pressed="false">女</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="age">年龄</label>
+            <div class="input-wrap">
+              <input id="age" name="age" type="number" inputmode="numeric" min="14" max="80" placeholder="28" autocomplete="off">
+              <span class="suffix">岁</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="height">身高</label>
+            <div class="input-wrap">
+              <input id="height" name="height" type="number" inputmode="decimal" min="120" max="230" placeholder="175" autocomplete="off">
+              <span class="suffix">cm</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="weight">当前体重</label>
+            <div class="input-wrap">
+              <input id="weight" name="weight" type="number" inputmode="decimal" step="0.1" min="35" max="300" placeholder="80.0" autocomplete="off">
+              <span class="suffix">kg</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="goalWeight">目标体重 <span class="opt">可选</span></label>
+            <div class="input-wrap">
+              <input id="goalWeight" name="goalWeight" type="number" inputmode="decimal" step="0.1" min="30" max="300" placeholder="—" autocomplete="off">
+              <span class="suffix">kg</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="actLabel">训练强度</label>
+          <div class="choices" role="radiogroup" aria-labelledby="actLabel" id="activityChoices">
+            <button type="button" class="choice" data-activity="novice" role="radio" aria-checked="false">
+              <span class="choice-top"><b>新手 / 女生</b><i>×5</i></span>
+              <span class="choice-hint">刚起步，或每周 2–3 次</span>
+            </button>
+            <button type="button" class="choice is-on" data-activity="hobby" role="radio" aria-checked="true">
+              <span class="choice-top"><b>普通爱好者</b><i>×8</i></span>
+              <span class="choice-hint">每周 3–5 次，训练有强度</span>
+            </button>
+            <button type="button" class="choice" data-activity="high" role="radio" aria-checked="false">
+              <span class="choice-top"><b>高强度</b><i>×10</i></span>
+              <span class="choice-hint">每周 5 次以上 / 体力劳动</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="preview" id="preview" aria-live="polite">
+          <div class="preview-head">
+            <span class="overline">总消耗</span>
+            <span class="preview-kcal"><b id="pvKcal">—</b><span>kcal</span></span>
+          </div>
+          <div class="preview-grid">
+            <div><span>碳水 <i>50%</i></span><b id="pvCarb">—</b><em>g</em></div>
+            <div><span>蛋白 <i>30%</i></span><b id="pvPro">—</b><em>g</em></div>
+            <div><span>脂肪 <i>20%</i></span><b id="pvFat">—</b><em>g</em></div>
+          </div>
+          <p class="preview-note" id="pvNote">首周先按总消耗吃，不刻意制造缺口。</p>
+        </div>
+
+        <p class="form-error" id="setupError" role="alert"></p>
+        <button class="btn primary block" type="submit">生成我的方案</button>
+        <p class="fine">数据只保存在这台设备的浏览器里，不联网、不注册。</p>
+      </form>
+
+      <p class="boot-foot">按「532 碳水渐降减脂法」实现 · 仅供参考，不替代医疗建议</p>
+    </div>
+  </section>
+
+  <!-- ============ 主界面 ============ -->
+  <div id="shell" class="shell" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark small" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>532 碳降</span>
+      </div>
+      <div class="wk" id="wkTag">第 1 周 · 第 1 天</div>
+    </header>
+
+    <main id="main" class="main"></main>
+
+    <nav class="tabbar" id="tabbar" aria-label="主导航">
+      <button type="button" class="tab is-on" data-view="today" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2"/><path d="M12 8.4v3.9l2.6 1.6"/></svg>
+        <span>今日</span>
+      </button>
+      <button type="button" class="tab" data-view="log">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.5l5.2-5.4 3.8 3 6.9-8"/><path d="M4 21h16"/></svg>
+        <span>记录</span>
+      </button>
+      <button type="button" class="tab" data-view="plan">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h4.5v-5H13V9h5V4"/><path d="M20 19V9"/></svg>
+        <span>方案</span>
+      </button>
+      <button type="button" class="tab" data-view="me">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.4" r="3.4"/><path d="M5.5 19.5c1.2-3.3 3.6-4.9 6.5-4.9s5.3 1.6 6.5 4.9"/></svg>
+        <span>我的</span>
+      </button>
+    </nav>
+  </div>
+</div>
+
+<!-- ============ 底部面板 ============ -->
+<div id="sheetLayer" class="sheet-layer" hidden>
+  <div class="scrim" data-act="close-sheet"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-grip" aria-hidden="true"></div>
+    <div id="sheetBody"></div>
+  </div>
+</div>
+
+<!-- ============ 确认框 ============ -->
+<div id="modalLayer" class="modal-layer" hidden>
+  <div class="scrim" data-act="close-modal"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h3 id="modalTitle"></h3>
+    <p id="modalBody"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" data-act="close-modal">取消</button>
+      <button type="button" class="btn primary" id="modalOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<noscript><p class="noscript">这个应用需要开启 JavaScript 才能计算方案。</p></noscript>
+
+<script src="assets/core.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
