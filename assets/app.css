@@ -226,7 +226,8 @@ input, select { font: inherit; color: inherit; }
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; min-width: 0; }
 .field:last-child { margin-bottom: 0; }
 
-.field > label {
+.field > label,
+.field > .fld-label {
   font-size: 0.75rem;
   letter-spacing: 0.03em;
   color: var(--muted);
@@ -939,6 +940,36 @@ input, select { font: inherit; color: inherit; }
 }
 .picker input[type="search"]:focus { outline: 2px solid var(--green); outline-offset: 1px; }
 
+.food-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 10px -2px 2px;
+  padding: 0 2px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.food-tabs::-webkit-scrollbar { display: none; }
+.food-tab {
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.food-tab.is-on {
+  background: var(--green);
+  border-color: var(--green);
+  color: #FFFDF8;
+  font-weight: 600;
+}
+
 .food-group { margin-top: 16px; }
 .food-group-title {
   font-size: 0.6875rem;
@@ -994,6 +1025,17 @@ input, select { font: inherit; color: inherit; }
 .wdelta.good { color: var(--green-ink); }
 .wdelta.bad { color: var(--amber); }
 .wchev { flex: none; margin-left: 2px; color: var(--muted); font-size: 0.9375rem; line-height: 1; }
+
+.wtname { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.wtname .tag { padding: 3px 8px; }
+.icon-btn.tiny-x {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
 
 .grams-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .grams-row .gbtn {

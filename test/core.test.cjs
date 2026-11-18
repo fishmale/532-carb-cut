@@ -110,5 +110,33 @@ ok('state dates are local-key stable', () => {
   assert.equal(C.addDaysKey('2026-11-30', 1), '2026-12-01');
 });
 
+ok('food library is unique and grouped', () => {
+  assert.ok(C.FOODS.length >= 100);
+  const ids = new Set(C.FOODS.map((f) => f.id));
+  assert.equal(ids.size, C.FOODS.length);
+  const keys = new Set(C.FOOD_GROUPS.map((g) => g.key));
+  C.FOODS.forEach((f) => {
+    assert.ok(keys.has(f.g), 'unknown group ' + f.g + ' on ' + f.id);
+    assert.ok(f.portion > 0, 'portion missing on ' + f.id);
+    assert.ok(f.carb >= 0 && f.protein >= 0 && f.fat >= 0, 'macro missing on ' + f.id);
+  });
+});
+
+ok('workouts add, stats and remove', () => {
+  const s = C.createState({ sex: 'male', age: 30, height: 178, weight: 85, activity: 'hobby' });
+  assert.equal(C.workoutStats(s, C.addDaysKey(C.todayKey(), -6)).count, 0);
+  C.addWorkout(s, { date: C.todayKey(), type: 'strength', minutes: 45 });
+  C.addWorkout(s, { date: C.todayKey(), type: 'cardio', minutes: 30 });
+  const st = C.workoutStats(s, C.addDaysKey(C.todayKey(), -6));
+  assert.equal(st.count, 2);
+  assert.equal(st.minutes, 75);
+  assert.equal(st.byType.strength, 45);
+  assert.equal(C.workoutLabel('strength'), '力量');
+  const gone = C.removeWorkout(s, s.workouts[0].id);
+  assert.ok(gone && gone.id);
+  assert.equal(s.workouts.length, 1);
+  assert.equal(C.workoutStats(s, C.addDaysKey(C.todayKey(), -6)).minutes, 30);
+});
+
 console.log(process.exitCode ? 'FAILED' : 'all good');
 

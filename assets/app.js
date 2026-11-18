@@ -76,6 +76,7 @@
       s.checkins = s.checkins || [];
       s.settings = s.settings || { theme: 'auto' };
       s.settings.textScale = s.settings.textScale || 1;
+      s.workouts = s.workouts || [];
       s.plan.adjustments = s.plan.adjustments || [];
       return s;
     } catch (e) {
@@ -494,6 +495,33 @@
     );
 
     var list = state.checkins.slice().sort(function (a, b) { return b.week - a.week; });
+
+    var wkStat = C.workoutStats(state, weekStartKey);
+    var recentWorkouts = (state.workouts || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 4);
+    parts.push(
+      '<section class="card">' +
+        '<div class="card-head"><h2>训练</h2><button type="button" class="link" data-act="open-workout">记一次</button></div>' +
+        '<div class="stat-row">' +
+          '<div><span class="k">本周次数</span><b>' + wkStat.count + '<small> 次</small></b></div>' +
+          '<div><span class="k">本周时长</span><b>' + wkStat.minutes + '<small> 分钟</small></b></div>' +
+          '<div><span class="k">记录总数</span><b>' + (state.workouts || []).length + '<small> 次</small></b></div>' +
+        '</div>' +
+        (recentWorkouts.length
+          ? '<ul class="wlist">' + recentWorkouts.map(function (w) {
+              return '<li>' +
+                '<div class="wrow">' +
+                  '<span class="wdate">' + md(w.date) + '</span>' +
+                  '<span class="wtname"><i class="tag">' + C.workoutLabel(w.type) + '</i></span>' +
+                  '<span class="wval">' + w.minutes + '<small> 分钟</small></span>' +
+                  '<button type="button" class="icon-btn tiny-x" data-act="del-workout" data-id="' + w.id + '" aria-label="删除这次训练">✕</button>' +
+                '</div>' +
+              '</li>';
+            }).join('') + '</ul>'
+          : '<p class="empty">还没记过训练。力量、有氧、球类都可以记一笔。</p>') +
+        '<p class="fine">训练只做记录，不会改动 532 的碳水目标；想调整热量请用「方案参数 → 手动总消耗」。</p>' +
+      '</section>'
+    );
+
     parts.push(
       '<section class="card">' +
         '<div class="card-head"><h2>每周结算</h2><span class="muted small">' + (state.checkins.length ? '只看第 7 天' : '') + '</span></div>' +
@@ -958,13 +986,14 @@
     if (sheet.type === 'picker') {
       return '<div class="sheet-head">' +
           '<div class="sheet-head-main"><h3 id="sheetTitle">选择食物</h3>' +
-          '<p class="sheet-sub">先点食物，再定克数</p></div>' +
+          '<p class="sheet-sub">' + C.FOODS.length + ' 种常见食物，先点食物，再定克数</p></div>' +
           '<button type="button" class="icon-btn" data-act="close-sheet" aria-label="关闭">✕</button>' +
         '</div>' +
         '<div class="sheet-body picker">' +
           '<input id="foodSearch" class="field" type="search" placeholder="搜食物：米饭、鸡胸、牛奶…" aria-label="搜索食物" autocomplete="off">' +
-          '<div id="foodList">' + foodListHtml('') + '</div>' +
-          '<button type="button" class="btn ghost block" data-act="open-custom">自定义一份</button>' +
+          foodGroupChips() +
+          '<div id="foodList">' + foodListHtml('', sheet.group) + '</div>' +
+          '<button type="button" class="btn ghost block" data-act="open-custom">找不到？自定义一份</button>' +
         '</div>';
     }
 
@@ -983,6 +1012,29 @@
         '<button class="btn primary block" type="submit">加入今日</button>' +
       '</form>';
     }
+
+    if (sheet.type === 'workout') {
+      var wDateK = sheet.date || C.todayKey();
+      return '<form data-form="workout">' +
+        sheetHead('记一次训练', '训练只做记录，不会改动碳水和热量目标。') +
+        '<div class="sheet-body">' +
+          '<div class="field"><span class="fld-label">类型</span>' +
+            '<div class="seg" role="group" aria-label="训练类型">' +
+              C.WORKOUT_TYPES.map(function (t, i) {
+                return '<button type="button" class="seg-btn' + (i === 0 ? ' is-on' : '') + '" data-wtype="' + t.key + '">' + t.label + '</button>';
+              }).join('') +
+            '</div>' +
+            '<input type="hidden" id="wkType" name="type" value="' + C.WORKOUT_TYPES[0].key + '">' +
+          '</div>' +
+          '<div class="field" style="margin-top:12px"><label for="wkMin">时长</label>' +
+            '<div class="input-wrap"><input id="wkMin" name="minutes" type="number" inputmode="numeric" min="1" max="300" step="5" value="45" aria-label="训练时长"><span class="suffix">分钟</span></div></div>' +
+          '<div class="field" style="margin-top:12px"><label for="wkDate">日期</label>' +
+            '<div class="input-wrap"><input id="wkDate" name="date" type="date" value="' + wDateK + '" max="' + C.todayKey() + '" aria-label="训练日期"></div></div>' +
+        '</div>' +
+        '<button class="btn primary block" type="submit">保存</button>' +
+      '</form>';
+    }
+
 
     if (sheet.type === 'rules') {
       return sheetHead('532 规则', '五条，按顺序执行就行。') +
@@ -1046,12 +1098,30 @@
   function bindSheet() {
     if (!sheet) return;
 
+    if (sheet.type === 'workout') {
+      var typed = $('#wkType');
+      var chips = $$('[data-wtype]', $('#sheetBody'));
+      chips.forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (typed) typed.value = b.dataset.wtype;
+          chips.forEach(function (x) { x.classList.toggle('is-on', x === b); });
+        });
+      });
+      return;
+    }
+
     if (sheet.type === 'picker') {
       var search = $('#foodSearch');
       var list = $('#foodList');
       if (search && list) {
         search.addEventListener('input', function () {
-          list.innerHTML = foodListHtml(search.value);
+          if (search.value.trim() && sheet.group && sheet.group !== 'all') {
+            sheet.group = 'all';
+            $$('.food-tab', $('#sheetBody')).forEach(function (t) {
+              t.classList.toggle('is-on', t.dataset.group === 'all');
+            });
+          }
+          list.innerHTML = foodListHtml(search.value, sheet.group);
         });
       }
       return;
@@ -1104,21 +1174,52 @@
     openSheet({ type: 'food', food: f, back: fromPicker ? 'picker' : null });
   }
 
+  function foodKcal(f) {
+    return Math.round(f.carb * 4 + f.protein * 4 + f.fat * 9);
+  }
+
   function foodRow(f) {
     return '<button type="button" class="food-row" data-act="open-food" data-food="' + f.id + '">' +
       '<span class="food-name">' + esc(f.name) + '</span>' +
-      '<span class="food-meta">碳水 ' + f.carb + ' g / 100 g</span>' +
+      '<span class="food-meta">碳水 ' + f.carb + ' g · ' + foodKcal(f) + ' kcal</span>' +
       '<span class="food-go" aria-hidden="true">›</span>' +
     '</button>';
   }
 
-  function foodListHtml(q) {
+  function foodMatch(f, q) {
+    if (!q) return true;
+    var hay = (f.name + ' ' + (f.alt || '')).toLowerCase();
+    return hay.indexOf(q.toLowerCase()) >= 0;
+  }
+
+  function foodGroupChips() {
+    var cur = (sheet && sheet.group) || 'all';
+    var tabs = [{ key: 'all', label: '全部' }].concat(C.FOOD_GROUPS);
+    return '<div class="food-tabs" role="group" aria-label="食物分类">' +
+      tabs.map(function (g) {
+        return '<button type="button" class="food-tab' + (cur === g.key ? ' is-on' : '') + '" data-act="food-group" data-group="' + g.key + '">' + g.label + '</button>';
+      }).join('') +
+    '</div>';
+  }
+
+  function foodListHtml(q, group) {
     q = String(q || '').trim();
-    var items = C.FOODS.filter(function (f) { return !q || f.name.indexOf(q) >= 0; });
+    group = group || 'all';
+    var scoped = q ? 'all' : group;
+    var items = C.FOODS.filter(function (f) {
+      return (scoped === 'all' || f.g === scoped) && foodMatch(f, q);
+    });
 
     if (q) {
-      if (!items.length) return '<p class="empty">没找到「' + esc(q) + '」，可以自己填一份。</p>';
+      if (!items.length) return '<p class="empty">没找到「' + esc(q) + '」，换个词或自己填一份。</p>';
       return '<div class="food-rows">' + items.map(foodRow).join('') + '</div>';
+    }
+
+    if (group !== 'all') {
+      var label = '';
+      C.FOOD_GROUPS.forEach(function (g) { if (g.key === group) label = g.label; });
+      return '<div class="food-group"><div class="food-group-title">' + label + ' · ' + items.length + ' 种</div>' +
+        '<div class="food-rows">' + items.map(foodRow).join('') + '</div></div>';
     }
 
     var html = '<div class="food-group"><div class="food-group-title">最近常吃</div>' +
@@ -1127,7 +1228,7 @@
     C.FOOD_GROUPS.forEach(function (g) {
       var rows = C.FOODS.filter(function (f) { return f.g === g.key; });
       if (!rows.length) return;
-      html += '<div class="food-group"><div class="food-group-title">' + g.label + '</div>' +
+      html += '<div class="food-group"><div class="food-group-title">' + g.label + ' · ' + rows.length + ' 种</div>' +
         '<div class="food-rows">' + rows.map(foodRow).join('') + '</div></div>';
     });
 
@@ -1395,6 +1496,20 @@
       return;
     }
 
+    if (type === 'workout') {
+      var wType = form.type.value || 'other';
+      var wMin = parseFloat(form.minutes.value);
+      var wKey = (form.date && form.date.value) || C.todayKey();
+      if (!(wMin >= 1 && wMin <= 300)) { toast('时长填 1–300 分钟'); return; }
+      if (C.diffDaysKeys(wKey, C.todayKey()) < 0) { toast('还不能记以后的训练'); return; }
+      C.addWorkout(state, { date: wKey, type: wType, minutes: wMin });
+      saveState();
+      closeSheet();
+      render();
+      toast('已记下 ' + C.workoutLabel(wType) + ' ' + wMin + ' 分钟');
+      return;
+    }
+
     if (type === 'add-food') {
       var food = C.FOODS.filter(function (x) { return x.id === form.dataset.food; })[0];
       var grams = parseFloat(form.grams.value);
@@ -1454,6 +1569,14 @@
       case 'open-food': openFood(el.dataset.food, sheet && sheet.type === 'picker'); break;
       case 'open-picker': openSheet({ type: 'picker' }); break;
       case 'open-rules': openSheet({ type: 'rules' }); break;
+      case 'food-group':
+        if (!sheet) break;
+        sheet.group = el.dataset.group || 'all';
+        $$('.food-tab').forEach(function (b) { b.classList.toggle('is-on', b.dataset.group === sheet.group); });
+        var flist = $('#foodList');
+        var fsearch = $('#foodSearch');
+        if (flist) flist.innerHTML = foodListHtml(fsearch ? fsearch.value : '', sheet.group);
+        break;
       case 'back-picker': openSheet({ type: 'picker' }); break;
       case 'open-custom': openSheet({ type: 'custom' }); break;
       case 'open-weigh': openSheet({ type: 'weigh', date: el.dataset.date || C.todayKey() }); break;
@@ -1475,6 +1598,24 @@
         toast('已删除 ' + (removed.name || '这条记录'), '撤销', function () {
           state.foods[key] = state.foods[key] || [];
           state.foods[key].splice(Math.min(idx, state.foods[key].length), 0, removed);
+          saveState();
+          render();
+          toast('已恢复');
+        });
+        break;
+      case 'open-workout': openSheet({ type: 'workout' }); break;
+      case 'del-workout':
+        var wid = el.dataset.id;
+        var gone = null;
+        var allW = state.workouts || [];
+        for (var wi = 0; wi < allW.length; wi++) if (allW[wi].id === wid) gone = allW[wi];
+        if (!gone) break;
+        C.removeWorkout(state, wid);
+        saveState();
+        render();
+        toast('已删除这次训练', '撤销', function () {
+          state.workouts.push(gone);
+          state.workouts.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
           saveState();
           render();
           toast('已恢复');
