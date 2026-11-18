@@ -770,6 +770,12 @@
   function trendCard() {
     var m = C.monthlyReview(state, 8);
     var list = m.weeks;
+    if (list.length < 2) {
+      return '<section class="card">' +
+        '<div class="card-head"><h2>趋势</h2><span class="muted small">体重 · 平均碳水</span></div>' +
+        '<p class="empty">过两周这里会出现体重折线和每周平均碳水，现在先按目标吃。</p>' +
+      '</section>';
+    }
     var weights = list.filter(function (w) { return w.weightEnd != null; });
     var head = '<div class="card-head"><h2>近 ' + list.length + ' 周</h2>' +
       '<span class="muted small">体重 · 平均碳水</span></div>';
