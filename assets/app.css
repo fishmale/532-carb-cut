@@ -718,7 +718,7 @@ input, select { font: inherit; color: inherit; }
 .chart .dot { fill: var(--card); stroke: var(--green); stroke-width: 1.8; }
 .chart .dot.last { fill: var(--green); }
 .chart .chk { fill: var(--lime-deep); stroke: var(--card); stroke-width: 1.5; }
-.chart .cap { fill: var(--ink); font-size: 9.5px; font-weight: 600; }
+.chart .cap { fill: var(--ink); font-size: 11px; font-weight: 600; }
 .chart .step-line { fill: none; stroke: var(--green); stroke-width: 2; stroke-linejoin: round; }
 .chart .step-area { fill: var(--lime-deep); opacity: 0.16; }
 .chart .now-line { stroke: var(--amber); stroke-width: 1; stroke-dasharray: 3 3; }

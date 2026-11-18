@@ -196,6 +196,7 @@
 
     var map = { today: viewToday, log: viewLog, plan: viewPlan, me: viewMe };
     $('#main').innerHTML = (map[view] || viewToday)();
+    syncChartWidth();
 
     if (opts.scroll) window.scrollTo(0, 0);
   }
@@ -495,11 +496,25 @@
     return parts.join('');
   }
 
+  /* 图表按容器实际像素宽绘制：viewBox 宽度 = 渲染宽度，SVG 不再被缩放，
+     11px 的字就真的是 11px（之前 340 缩到约 322，字只有 10.4px） */
+  var chartWidth = 0;
+
+  function syncChartWidth() {
+    var svg = document.querySelector('#main svg.chart');
+    if (!svg) return;
+    var w = Math.round(svg.getBoundingClientRect().width);
+    if (w > 0 && Math.abs(w - chartWidth) > 1) {
+      chartWidth = w;
+      render();
+    }
+  }
+
   function weightChart() {
     var pts = C.sortedWeights(state);
     if (pts.length < 2) return '<p class="empty">记录 2 天以上就能看到曲线。</p>';
 
-    var W = 340, H = 178, L = 30, R = 12, T = 18, B = 24;
+    var W = chartWidth || 318, H = 178, L = 30, R = 12, T = 18, B = 24;
     var t0 = Math.min(C.fromKey(state.startDate).getTime(), C.fromKey(pts[0].date).getTime());
     var t1 = Math.max(C.fromKey(C.todayKey()).getTime(), C.fromKey(pts[pts.length - 1].date).getTime());
     if (t1 <= t0) t1 = t0 + 86400000;
@@ -701,7 +716,7 @@
       rows.push(Math.max(0, base - cut));
     }
 
-    var W = 340, H = 150, L = 30, R = 12, T = 14, B = 22;
+    var W = chartWidth || 318, H = 150, L = 30, R = 12, T = 14, B = 22;
     var minV = Math.min.apply(null, rows);
     var maxV = Math.max.apply(null, rows);
     var pad = Math.max(10, (maxV - minV) * 0.25);

@@ -65,10 +65,11 @@
 
 ### 7. 仍然存在的 Low
 
-- **没有 Dynamic Type 等价物**：字号是 px，系统「文字大小」不会生效；浏览器缩放可用，但 iOS 的辅助功能字号不跟随（`accessibility.md` 建议至少支持 200%）。小程序版可以用 `rpx` + 主题字号档位补。
-- **没有触觉反馈**：网页没有 Taptic Engine，保存成功只靠 toast。
-- **图表刻度**：viewBox 340 → 实际渲染 ~322，11 px 刻度落地约 10.4 px，仍偏小但属图表标注范畴。
+- **没有 Dynamic Type 等价物**：字号全部是 px，系统「文字大小」不会生效；浏览器缩放可用，但 iOS 的辅助功能字号不跟随（`accessibility.md` 建议至少支持 200%）。网页端受限于「px 字号 + 无 iOS 系统字号 API」，要真正等价，得把排版改成 rem 并加一个「文字大小」设置（小程序版天然可用 `rpx`）。
+- **没有触觉反馈**：`navigator.vibrate` 只在 Android Chrome 生效，iOS Safari 完全不实现，网页无法触发 Taptic Engine；保存成功目前只靠 toast。上小程序后可用 `wx.vibrateShort` 补。
 - **删除食物没有撤销**：直接删除，靠的是「一眼能看到它消失」。加一个 3 秒 Undo 会更接近系统级体验。
+
+> 图表刻度已在本轮修掉：两张 SVG 的 `viewBox` 宽度改为容器实际像素宽（`syncChartWidth()`，绘制后测量再重绘一次），`340 → 324` 的缩放消失，刻度与「272 g」等标注真正落在 11 px；`.chart .cap` 也从 9.5 px 提到 11 px。
 
 ## Craft notes
 
