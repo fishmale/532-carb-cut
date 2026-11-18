@@ -2,14 +2,17 @@
  * 目标：离线也能记录；发版时更新能自然生效。
  * - 导航请求：网络优先，失败回落到缓存的 index.html
  * - 静态资源：缓存优先 + 后台更新（stale-while-revalidate）
+ *
+ * 发版：把下面 V 加 1，并同步改 index.html 里三处 ?v=（app.css / core.js / app.js）。
  */
-var CACHE = 'carb532-v5';
+var V = '7';
+var CACHE = 'carb532-v' + V;
 var SHELL = [
   './',
   './index.html',
-  './assets/app.css',
-  './assets/app.js',
-  './assets/core.js',
+  './assets/app.css?v=' + V,
+  './assets/app.js?v=' + V,
+  './assets/core.js?v=' + V,
   './manifest.webmanifest',
   './assets/icons/favicon-32.png',
   './assets/icons/icon-192.png',

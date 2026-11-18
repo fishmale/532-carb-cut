@@ -217,6 +217,8 @@
     var last = C.latestWeight(state);
     var lastDays = last ? C.diffDaysKeys(last.date, todayKey) : null;
     var leftCarb = Math.max(0, Math.round(t.carb - tot.carb));
+    var eatenPct = t.kcal > 0 ? Math.min(100, (tot.kcal / t.kcal) * 100) : 0;
+    var overKcal = tot.kcal - t.kcal;
 
     var parts = [];
 
@@ -228,6 +230,13 @@
         '</div>' +
         '<p class="hero-label">今日摄入目标</p>' +
         '<div class="hero-num"><b>' + n0(t.kcal) + '</b><span>kcal</span></div>' +
+        '<div class="hero-intake' + (overKcal > 0.5 ? ' is-over' : '') + '">' +
+          '<div class="hero-track"><i style="width:' + eatenPct.toFixed(1) + '%"></i></div>' +
+          '<div class="hero-intake-text">' +
+            '<span>已摄入 <b>' + n0(tot.kcal) + '</b> kcal</span>' +
+            '<span>' + (overKcal > 0.5 ? '超出 <b>' + n0(overKcal) + '</b> kcal' : '还可吃 <b>' + n0(-overKcal) + '</b> kcal') + '</span>' +
+          '</div>' +
+        '</div>' +
         '<div class="hero-macros">' +
           '<div><span>碳水' + (t.cut ? ' −' + t.cut + 'g' : '') + '</span><b>' + t.carb + '</b><i>g</i></div>' +
           '<div><span>蛋白</span><b>' + t.protein + '</b><i>g</i></div>' +
@@ -252,7 +261,7 @@
 
     parts.push(
       '<section class="card">' +
-        '<div class="card-head"><h2>今日摄入</h2><span class="muted small">' + (entries.length ? entries.length + ' 项' : '还没记录') + '</span></div>' +
+        '<div class="card-head"><h2>今日摄入</h2><span class="muted small">' + (entries.length ? entries.length + ' 项 · ' + n0(tot.kcal) + ' kcal' : '还没记录') + '</span></div>' +
         macroRow('碳水', 'm-carb', tot.carb, t.carb) +
         macroRow('蛋白', 'm-pro', tot.protein, t.protein) +
         macroRow('脂肪', 'm-fat', tot.fat, t.fat) +
@@ -600,7 +609,7 @@
             }).join('') +
           '</select>' +
         '</div>' +
-        '<div class="setting stack">' +
+        '<div class="setting stacked">' +
           '<div class="label">手动总消耗<small>有手表 / 体测数据时填，留空用公式</small></div>' +
           '<form class="mini-form" data-form="override">' +
             '<label class="input-wrap"><input name="kcal" type="number" inputmode="numeric" min="800" max="6000" step="10" value="' + (plan.overrideKcal || '') + '" placeholder="' + plan.tdee + '" aria-label="手动总消耗"><span class="suffix">kcal</span></label>' +
@@ -657,8 +666,9 @@
     var nowX = (L + dx * (nowWeek - 1) + dx / 2).toFixed(1);
     svg += '<line class="now-line" x1="' + nowX + '" y1="' + T + '" x2="' + nowX + '" y2="' + (H - B) + '"/>';
 
+    var showAll = totalWeeks <= 8;
     for (var k = 0; k < totalWeeks; k++) {
-      if (k === 0 || k === nowWeek - 1 || (k + 1) % 2 === 0) {
+      if (showAll || k === 0 || k === nowWeek - 1 || (k + 1) % 2 === 0) {
         svg += '<text x="' + (L + dx * k + dx / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle">' + (k + 1) + '</text>';
       }
     }

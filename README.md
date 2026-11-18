@@ -43,7 +43,7 @@
 532/
 ├─ index.html              单页入口（首屏设置 + 主框架）
 ├─ manifest.webmanifest    PWA 清单
-├─ sw.js                   离线缓存（改静态资源后把 CACHE 版本号 +1）
+├─ sw.js                   离线缓存（发版时把 V 加 1，见下方「改完代码发版」）
 ├─ assets/
 │  ├─ core.js              纯逻辑（UMD，无 DOM）：计算、校验、周结算、调碳
 │  ├─ app.js               UI 与本地存储
@@ -101,6 +101,8 @@ git push -u origin main
 **自己的服务器**：把目录丢进任意静态目录即可（Nginx `root` 指向它）。`sw.js` 必须以根路径可访问，否则离线功能不生效。
 
 部署后第一次用 https 打开，点「我的 → 数据 → 安装到主屏」或浏览器菜单里的「添加到主屏幕」即可当 App 用。
+
+**改完代码发版**：`assets/` 或 `index.html` 有改动时，把 `sw.js` 顶部的 `var V = '7'` 加 1，并把 `index.html` 里三处 `?v=7`（app.css / core.js / app.js）改成同一个数字，否则已装到手机上的旧版本会继续读缓存。只改 README 或截图不用动版本号。
 
 ---
 
