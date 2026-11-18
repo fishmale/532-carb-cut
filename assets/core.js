@@ -48,7 +48,7 @@
     { g: 'staple', id: 'yam', name: '山药', carb: 12.4, protein: 1.9, fat: 0.2, portion: 150, alt: '淮山' },
     { g: 'staple', id: 'pasta', name: '意面（干）', carb: 75.0, protein: 12.0, fat: 1.5, portion: 80, alt: '意大利面 通心粉' },
     { g: 'staple', id: 'quinoa', name: '藜麦（熟）', carb: 21.3, protein: 4.4, fat: 1.9, portion: 150, alt: '藜麦 奎奴亚' },
-    { g: 'staple', id: 'ricecake', name: '年糕', carb: 35.0, protein: 3.0, fat: 0.5, portion: 100, alt: '年糕 江米' },
+    { g: 'staple', id: 'ricecake', name: '年糕', carb: 35.0, protein: 3.0, fat: 0.5, portion: 100, alt: '江米' },
 
     /* 蛋白 */
     { g: 'protein', id: 'chicken', name: '鸡胸肉', carb: 0.0, protein: 31.0, fat: 3.6, portion: 150, alt: '鸡胸 鸡肉 鸡脯' },
@@ -65,7 +65,7 @@
     { g: 'protein', id: 'cod', name: '鳕鱼', carb: 0.0, protein: 20.0, fat: 0.5, portion: 150, alt: '白鱼 鳕鱼排' },
     { g: 'protein', id: 'shrimp', name: '虾', carb: 0.0, protein: 18.0, fat: 0.8, portion: 150, alt: '虾仁 基围虾 白虾' },
     { g: 'protein', id: 'tuna', name: '金枪鱼（水浸）', carb: 0.0, protein: 24.0, fat: 1.0, portion: 100, alt: '吞拿鱼 罐头金枪鱼' },
-    { g: 'protein', id: 'ham', name: '火腿', carb: 1.0, protein: 16.0, fat: 8.0, portion: 50, alt: '火腿片 午餐肉' },
+    { g: 'protein', id: 'ham', name: '火腿', carb: 1.0, protein: 16.0, fat: 8.0, portion: 50, alt: '火腿片' },
     { g: 'protein', id: 'sausage', name: '香肠', carb: 3.0, protein: 14.0, fat: 25.0, portion: 60, alt: '腊肠 热狗肠' },
     { g: 'protein', id: 'beefjerky', name: '牛肉干', carb: 10.0, protein: 45.0, fat: 10.0, portion: 40, alt: '牛干巴 风干牛肉' },
     { g: 'protein', id: 'fishball', name: '鱼丸', carb: 12.0, protein: 10.0, fat: 3.0, portion: 100, alt: '鱼蛋 墨鱼丸' },
@@ -77,8 +77,8 @@
 
     /* 蔬菜 */
     { g: 'veg', id: 'broccoli', name: '西兰花', carb: 4.3, protein: 4.1, fat: 0.6, portion: 200, alt: '西蓝花 绿花菜' },
-    { g: 'veg', id: 'spinach', name: '菠菜', carb: 4.5, protein: 2.6, fat: 0.3, portion: 200, alt: '菠菜' },
-    { g: 'veg', id: 'lettuce', name: '生菜', carb: 2.9, protein: 1.3, fat: 0.3, portion: 150, alt: '生菜 油麦菜' },
+    { g: 'veg', id: 'spinach', name: '菠菜', carb: 4.5, protein: 2.6, fat: 0.3, portion: 200, alt: '' },
+    { g: 'veg', id: 'lettuce', name: '生菜', carb: 2.9, protein: 1.3, fat: 0.3, portion: 150, alt: '油麦菜' },
     { g: 'veg', id: 'cabbage', name: '大白菜', carb: 3.2, protein: 1.5, fat: 0.1, portion: 200, alt: '白菜 娃娃菜' },
     { g: 'veg', id: 'tomato', name: '番茄', carb: 4.0, protein: 0.9, fat: 0.2, portion: 200, alt: '西红柿 圣女果' },
     { g: 'veg', id: 'cucumber', name: '黄瓜', carb: 2.9, protein: 0.8, fat: 0.2, portion: 200, alt: '青瓜' },
@@ -94,18 +94,18 @@
 
     /* 水果 */
     { g: 'fruit', id: 'banana', name: '香蕉', carb: 22.0, protein: 1.4, fat: 0.2, portion: 120, alt: '蕉' },
-    { g: 'fruit', id: 'apple', name: '苹果', carb: 13.5, protein: 0.3, fat: 0.2, portion: 200, alt: '苹果' },
-    { g: 'fruit', id: 'orange', name: '橙子', carb: 11.0, protein: 0.8, fat: 0.2, portion: 200, alt: '橘子 柑橘 柚子' },
+    { g: 'fruit', id: 'apple', name: '苹果', carb: 13.5, protein: 0.3, fat: 0.2, portion: 200, alt: '红富士 青苹果' },
+    { g: 'fruit', id: 'orange', name: '橙子', carb: 11.0, protein: 0.8, fat: 0.2, portion: 200, alt: '脐橙 橘橙' },
     { g: 'fruit', id: 'grape', name: '葡萄', carb: 10.3, protein: 0.5, fat: 0.2, portion: 150, alt: '提子 巨峰' },
     { g: 'fruit', id: 'watermelon', name: '西瓜', carb: 6.8, protein: 0.6, fat: 0.1, portion: 300, alt: '瓜' },
     { g: 'fruit', id: 'strawberry', name: '草莓', carb: 7.1, protein: 1.0, fat: 0.2, portion: 150, alt: '士多啤梨' },
-    { g: 'fruit', id: 'blueberry', name: '蓝莓', carb: 14.5, protein: 0.7, fat: 0.3, portion: 100, alt: '蓝莓' },
+    { g: 'fruit', id: 'blueberry', name: '蓝莓', carb: 14.5, protein: 0.7, fat: 0.3, portion: 100, alt: '' },
     { g: 'fruit', id: 'kiwi', name: '猕猴桃', carb: 14.5, protein: 1.1, fat: 0.5, portion: 100, alt: '奇异果' },
     { g: 'fruit', id: 'pear', name: '梨', carb: 13.3, protein: 0.4, fat: 0.2, portion: 200, alt: '雪梨 鸭梨' },
     { g: 'fruit', id: 'peach', name: '桃', carb: 12.2, protein: 0.9, fat: 0.1, portion: 200, alt: '水蜜桃 桃子' },
     { g: 'fruit', id: 'dragonfruit', name: '火龙果', carb: 13.3, protein: 1.1, fat: 0.2, portion: 200, alt: '红心火龙果' },
-    { g: 'fruit', id: 'mango', name: '芒果', carb: 15.0, protein: 0.6, fat: 0.2, portion: 200, alt: '芒果' },
-    { g: 'fruit', id: 'lychee', name: '荔枝', carb: 16.6, protein: 0.9, fat: 0.2, portion: 100, alt: '荔枝 桂味' },
+    { g: 'fruit', id: 'mango', name: '芒果', carb: 15.0, protein: 0.6, fat: 0.2, portion: 200, alt: '' },
+    { g: 'fruit', id: 'lychee', name: '荔枝', carb: 16.6, protein: 0.9, fat: 0.2, portion: 100, alt: '桂味 妃子笑' },
 
     /* 乳制品 */
     { g: 'dairy', id: 'milk', name: '牛奶', carb: 4.8, protein: 3.3, fat: 3.6, portion: 250, alt: '纯牛奶 全脂奶' },
@@ -119,12 +119,12 @@
     { g: 'fat', id: 'peanut', name: '花生', carb: 16.0, protein: 26.0, fat: 49.0, portion: 30, alt: '花生米 落花生' },
     { g: 'fat', id: 'walnut', name: '核桃', carb: 14.0, protein: 15.0, fat: 59.0, portion: 20, alt: '核桃仁 胡桃' },
     { g: 'fat', id: 'cashew', name: '腰果', carb: 30.0, protein: 18.0, fat: 44.0, portion: 20, alt: '腰果仁 介寿果' },
-    { g: 'fat', id: 'pistachio', name: '开心果', carb: 28.0, protein: 20.0, fat: 45.0, portion: 20, alt: '开心果' },
+    { g: 'fat', id: 'pistachio', name: '开心果', carb: 28.0, protein: 20.0, fat: 45.0, portion: 20, alt: '' },
     { g: 'fat', id: 'sesame', name: '芝麻', carb: 24.0, protein: 17.0, fat: 46.0, portion: 10, alt: '白芝麻 黑芝麻' },
     { g: 'fat', id: 'oliveoil', name: '橄榄油', carb: 0.0, protein: 0.0, fat: 100.0, portion: 10, alt: '初榨橄榄油' },
     { g: 'fat', id: 'oil', name: '食用油', carb: 0.0, protein: 0.0, fat: 100.0, portion: 10, alt: '花生油 菜籽油 大豆油 猪油' },
     { g: 'fat', id: 'butter', name: '黄油', carb: 0.9, protein: 0.7, fat: 81.0, portion: 10, alt: '牛油 黄油块' },
-    { g: 'fat', id: 'peanutbutter', name: '花生酱', carb: 20.0, protein: 25.0, fat: 50.0, portion: 20, alt: '花生酱 麻酱' },
+    { g: 'fat', id: 'peanutbutter', name: '花生酱', carb: 20.0, protein: 25.0, fat: 50.0, portion: 20, alt: '麻酱' },
     { g: 'fat', id: 'avocado', name: '牛油果', carb: 8.5, protein: 2.0, fat: 15.0, portion: 100, alt: '鳄梨 油梨' },
 
     /* 零食饮品 */
@@ -352,9 +352,67 @@
     return out;
   }
 
+  /*
+   * 一周回顾：体重、每日碳水、训练、结算状态
+   * week 为 1 起的周序号；省略则取当前周
+   */
+  function weekReview(state, week) {
+    var today = todayKey();
+    var cur = Math.max(1, Math.floor(diffDaysKeys(state.startDate, today) / 7) + 1);
+    week = Math.max(1, Math.round(toNum(week, cur)));
+    var from = addDaysKey(state.startDate, 7 * (week - 1));
+    var to = addDaysKey(state.startDate, 7 * week - 1);
+    var endKey = to < today ? to : today;
+    var targets = currentTargets(state.plan);
+
+    var startW = weightAt(state, from);
+    if (startW == null) startW = week === 1 ? state.profile.weightStart : weightAt(state, addDaysKey(from, -1));
+    var endW = weightAt(state, endKey);
+    var change = (startW != null && endW != null) ? round(startW - endW, 1) : null;
+    var goalKg = startW != null ? round(weeklyTargetKg(startW, state.plan.monthPct), 2) : null;
+
+    var days = [];
+    for (var i = 0; i < 7; i++) {
+      var key = addDaysKey(from, i);
+      if (key > today) break;
+      var tot = dayTotals(state, key);
+      days.push({
+        key: key,
+        carb: round(tot.carb, 1),
+        kcal: Math.round(tot.kcal),
+        target: targets.carb,
+        logged: tot.carb > 0,
+        over: tot.carb > targets.carb + 0.5
+      });
+    }
+
+    var wlist = (state.workouts || []).filter(function (w) { return w.date >= from && w.date <= to; });
+    var minutes = wlist.reduce(function (s, w) { return s + w.minutes; }, 0);
+    var byType = {};
+    wlist.forEach(function (w) { byType[w.type] = (byType[w.type] || 0) + w.minutes; });
+
+    var checkin = null;
+    for (var c = 0; c < state.checkins.length; c++) if (state.checkins[c].week === week) checkin = state.checkins[c];
+    var pending = null;
+    for (var p = 0; p < state.pendings.length; p++) if (state.pendings[p].week === week) pending = state.pendings[p];
+
+    var settledOn = checkinKey(state.startDate, week);
+    var isCurrent = week === cur;
+    var status = checkin ? (checkin.hit ? 'hit' : (checkin.action === 'reduce' ? 'reduced' : 'pending'))
+      : (pending ? 'waiting' : (!isCurrent ? 'missed' : 'open'));
+
+    return {
+      week: week, from: from, to: to, isCurrent: isCurrent,
+      settledOn: settledOn, daysElapsed: Math.max(0, diffDaysKeys(from, endKey) + 1),
+      weight: { start: startW, end: endW, change: change, goal: goalKg },
+      carb: { target: targets.carb, days: days, logged: days.filter(function (d) { return d.logged; }).length },
+      workout: { count: wlist.length, minutes: minutes, byType: byType },
+      checkin: checkin, pending: pending, status: status
+    };
+  }
+
   /* 收藏（置顶在食物选择器里） */
-  function isFavorite(state, id) {
-    return (state.favorites || []).indexOf(id) >= 0;
+  function isFavorite(state, id) {    return (state.favorites || []).indexOf(id) >= 0;
   }
 
   function toggleFavorite(state, id) {
@@ -577,6 +635,7 @@
     addWorkout: addWorkout,
     removeWorkout: removeWorkout,
     workoutStats: workoutStats,
+    weekReview: weekReview,
     weeklyWorkouts: weeklyWorkouts,
     isFavorite: isFavorite,
     toggleFavorite: toggleFavorite,

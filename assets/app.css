@@ -1219,3 +1219,107 @@ html { font-size: 100%; }
 .seg { align-items: stretch; }
 .seg-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; }
 .select { padding-top: 10px; padding-bottom: 10px; }
+
+/* ---------- 回顾 ---------- */
+.card.hero-soft {
+  background:
+    radial-gradient(120% 160% at 0% 0%, var(--green-soft), transparent 58%),
+    var(--card);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--card-2);
+  color: var(--ink-2);
+  font-size: 0.7188rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.pill.good { background: var(--green); color: #F4F8EB; }
+.pill.warn { background: var(--amber); color: var(--pill-ink); }
+.pill.bad { background: var(--danger); color: #FFF6F4; }
+
+.rv-range {
+  margin-top: 2px;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.rv-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-top: 12px;
+  min-height: 74px;
+}
+.rv-bar {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+}
+.rv-bar .rv-val {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--muted);
+  line-height: 1;
+}
+.rv-bar i {
+  display: block;
+  width: 100%;
+  max-width: 26px;
+  border-radius: 5px 5px 2px 2px;
+  background: var(--green);
+}
+.rv-bar.is-over i { background: var(--amber); }
+.rv-bar.is-empty i { background: var(--line); }
+.rv-bar .rv-day {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.rv-note {
+  margin-top: 10px;
+  font-size: 0.7812rem;
+  color: var(--muted);
+}
+
+.rv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rv-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.rv-hint {
+  margin-top: 2px;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.rv-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+.rv-nav .rv-range { margin-top: 0; flex: 1; text-align: center; }
+.rv-nav .icon-btn[disabled] { opacity: 0.35; }

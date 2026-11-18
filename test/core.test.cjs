@@ -165,5 +165,34 @@ ok('favorites toggle and order', () => {
   assert.equal(C.isFavorite(s, 'rice'), false);
 });
 
+ok('week review gathers weight, carb and work', () => {
+  const s = C.createState({ sex: 'male', age: 30, height: 178, weight: 85, activity: 'hobby' });
+  s.startDate = C.addDaysKey(C.todayKey(), -20);
+  s.weights = [
+    { date: s.startDate, kg: 85.0 },
+    { date: C.addDaysKey(s.startDate, 7), kg: 84.6 }
+  ];
+  s.foods[C.addDaysKey(s.startDate, 1)] = [
+    { id: 'rice', name: '米饭', grams: 300, carb: 77.7, protein: 7.8, fat: 0.9 }
+  ];
+  C.addWorkout(s, { date: C.addDaysKey(s.startDate, 8), type: 'strength', minutes: 45 });
+  const r = C.weekReview(s, 2);
+  assert.equal(r.week, 2);
+  assert.equal(r.isCurrent, false);
+  assert.equal(r.daysElapsed, 7);
+  assert.equal(r.from, C.addDaysKey(s.startDate, 7));
+  assert.equal(r.to, C.addDaysKey(s.startDate, 13));
+  assert.equal(r.weight.end, 84.6);
+  assert.equal(r.carb.days.length, 7);
+  assert.equal(r.carb.logged, 0);
+  assert.equal(r.workout.count, 1);
+  assert.equal(r.workout.minutes, 45);
+  assert.equal(r.workout.byType.strength, 45);
+  const cur = C.weekReview(s);
+  assert.equal(cur.isCurrent, true);
+  assert.equal(cur.daysElapsed, 7);
+  assert.equal(cur.status, 'open');
+});
+
 console.log(process.exitCode ? 'FAILED' : 'all good');
 

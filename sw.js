@@ -5,7 +5,7 @@
  *
  * 发版：把下面 V 加 1，并同步改 index.html 里三处 ?v=（app.css / core.js / app.js）。
  */
-var V = '17';
+var V = '18';
 var CACHE = 'carb532-v' + V;
 var SHELL = [
   './',

@@ -11,6 +11,7 @@
 
   var state = null;
   var view = 'today';
+  var reviewWeek = null;
   var sheet = null;
   var setup = { sex: 'male', activity: 'hobby' };
   var deferredPrompt = null;
@@ -201,7 +202,7 @@
 
     var wk = C.weekOf(state.startDate, C.todayKey());
     $('#wkTag').textContent = '第 ' + wk.week + ' 周 · 第 ' + wk.dayInWeek + ' 天';
-    var viewTitle = { today: '今日', log: '记录', plan: '方案', me: '我的' };
+    var viewTitle = { today: '今日', log: '记录', review: '回顾', plan: '方案', me: '我的' };
     var titleEl = $('#viewTitle');
     if (titleEl) titleEl.textContent = viewTitle[view] || '今日';
 
@@ -212,7 +213,7 @@
       else t.removeAttribute('aria-current');
     });
 
-    var map = { today: viewToday, log: viewLog, plan: viewPlan, me: viewMe };
+    var map = { today: viewToday, log: viewLog, review: viewReview, plan: viewPlan, me: viewMe };
     $('#main').innerHTML = (map[view] || viewToday)();
     syncChartWidth();
 
@@ -660,6 +661,96 @@
     svg += '<div class="chart-foot"><span>起点 ' + n1(startW) + ' kg</span><span>现在 ' + n1(pts[pts.length - 1].kg) + ' kg</span></div>';
 
     return svg;
+  }
+
+  /* ---------------- 回顾 ---------------- */
+
+  function rvStatus(r) {
+    if (r.status === 'hit') return { cls: 'good', text: '已达标' };
+    if (r.status === 'reduced') return { cls: 'good', text: '已调碳' };
+    if (r.status === 'pending') return { cls: 'warn', text: '待调碳' };
+    if (r.status === 'waiting') return { cls: 'warn', text: '等 3 天' };
+    if (r.status === 'missed') return { cls: 'bad', text: '未结算' };
+    return { cls: '', text: '进行中' };
+  }
+
+  function viewReview() {
+    var curWeek = C.weekOf(state.startDate, C.todayKey()).week;
+    if (reviewWeek != null) reviewWeek = Math.min(curWeek, Math.max(1, reviewWeek));
+    var r = C.weekReview(state, reviewWeek == null ? curWeek : reviewWeek);
+    var st = rvStatus(r);
+    var parts = [];
+
+    parts.push(
+      '<section class="card hero-soft">' +
+        '<div class="card-head"><h2>第 ' + r.week + ' 周</h2>' +
+          '<span class="pill ' + st.cls + '">' + st.text + '</span></div>' +
+        '<div class="rv-nav">' +
+          '<button type="button" class="icon-btn" data-act="rv-prev" aria-label="上一周"' + (r.week <= 1 ? ' disabled' : '') + '>‹</button>' +
+          '<span class="rv-range">' + md(r.from) + ' – ' + md(r.to) + ' · ' +
+            (r.isCurrent ? '第 ' + r.daysElapsed + ' / 7 天' : '已结束') + '</span>' +
+          '<button type="button" class="icon-btn" data-act="rv-next" aria-label="下一周"' + (r.week >= curWeek ? ' disabled' : '') + '>›</button>' +
+        '</div>' +
+      '</section>'
+    );
+
+    var w = r.weight;
+    var wtxt = (w.start == null || w.end == null || w.change === 0) ? '—' : signed(-w.change) + '<small> kg</small>';
+    var wcls = (w.change != null && w.change > 0) ? 'good' : (w.change != null && w.change < 0 ? 'bad' : '');
+    parts.push(
+      '<section class="card">' +
+        '<div class="card-head"><h2>体重</h2><span class="muted small">' +
+          (w.goal != null ? '本周目标 −' + n2(w.goal) + ' kg' : '') + '</span></div>' +
+        '<div class="stat-row">' +
+          '<div><span class="k">起点</span><b>' + (w.start != null ? n1(w.start) : '—') + '<small> kg</small></b></div>' +
+          '<div><span class="k">现在</span><b>' + (w.end != null ? n1(w.end) : '—') + '<small> kg</small></b></div>' +
+          '<div><span class="k">变化</span><b class="' + wcls + '">' + wtxt + '</b></div>' +
+        '</div>' +
+      '</section>'
+    );
+
+    var bars = r.carb.days.map(function (d) {
+      var pct = d.target > 0 ? Math.min(100, (d.carb / d.target) * 100) : 0;
+      var cls = d.over ? ' is-over' : (!d.logged ? ' is-empty' : '');
+      return '<div class="rv-bar' + cls + '">' +
+        '<span class="rv-val">' + (d.logged ? n0(d.carb) : '') + '</span>' +
+        '<i style="height:' + Math.max(3, Math.round(pct * 0.46)) + 'px"></i>' +
+        '<span class="rv-day">' + md(d.key).replace('/', '/') + '</span>' +
+      '</div>';
+    }).join('');
+    parts.push(
+      '<section class="card">' +
+        '<div class="card-head"><h2>每日碳水</h2><span class="muted small">目标 ' + n0(r.carb.target) + ' g / 天</span></div>' +
+        '<div class="rv-bars" role="img" aria-label="' + esc('本周每日碳水：' + r.carb.days.map(function (d) { return md(d.key) + ' ' + n0(d.carb) + ' 克'; }).join('，')) + '">' + bars + '</div>' +
+        '<p class="rv-note">' + (r.carb.logged ? '记了 ' + r.carb.logged + ' 天的碳水，剩下的照 5:3:2 吃满就行。' : '这周还没记过吃的，点「今日 → 全部食物」开始。') + '</p>' +
+      '</section>'
+    );
+
+    var types = Object.keys(r.workout.byType).map(function (k) {
+      return '<span class="rv-chip">' + C.workoutLabel(k) + ' ' + r.workout.byType[k] + '′</span>';
+    }).join('');
+    parts.push(
+      '<section class="card">' +
+        '<div class="card-head"><h2>训练</h2><span class="muted small">' + (r.workout.count ? r.workout.count + ' 次 · ' + r.workout.minutes + ' 分钟' : '还没练') + '</span></div>' +
+        (types ? '<div class="rv-chips">' + types + '</div>' : '<p class="empty">这周还没记训练。力量、有氧、球类都可以补记。</p>') +
+      '</section>'
+    );
+
+    var hint;
+    if (r.status === 'hit') hint = '达标就保持，蛋白、脂肪、碳水都别动，下周继续。';
+    else if (r.status === 'reduced') hint = '已经降过碳水，接下来照新目标吃，等第 7 天再看。';
+    else if (r.status === 'pending' || r.status === 'waiting') hint = '还差一点。按 532 的规矩等 3 天，再降 15 g 碳水。';
+    else if (r.status === 'missed') hint = '这周没结算。可以回记录页补上第 7 天的体重。';
+    else if (r.daysElapsed >= 7) hint = '今天是第 7 天，空腹称重后去结算这一周。';
+    else hint = '第 7 天空腹称重后结算；现在照目标吃就好。';
+    parts.push(
+      '<section class="card">' +
+        '<div class="card-head"><h2>这一周</h2></div>' +
+        '<p class="rv-hint">' + hint + '</p>' +
+      '</section>'
+    );
+
+    return parts.join('');
   }
 
   /* ---------------- 方案 ---------------- */
@@ -1250,23 +1341,31 @@
     }
 
     var html = '';
+    var shown = [];
     var favs = C.favoriteFoods(state);
     if (favs.length) {
+      shown = shown.concat(favs.map(function (f) { return f.id; }));
       html += '<div class="food-group"><div class="food-group-title">收藏 · ' + favs.length + ' 种</div>' +
         '<div class="food-rows">' + favs.map(foodRow).join('') + '</div></div>';
     }
-    var recents = recentFoods(4).filter(function (f) { return !C.isFavorite(state, f.id); });
+    var recents = recentFoods(4).filter(function (f) { return shown.indexOf(f.id) < 0; });
     if (recents.length) {
+      shown = shown.concat(recents.map(function (f) { return f.id; }));
       html += '<div class="food-group"><div class="food-group-title">最近常吃</div>' +
         '<div class="food-rows">' + recents.map(foodRow).join('') + '</div></div>';
     }
 
+    var rest = 0;
     C.FOOD_GROUPS.forEach(function (g) {
-      var rows = C.FOODS.filter(function (f) { return f.g === g.key; });
+      var rows = C.FOODS.filter(function (f) {
+        return f.g === g.key && shown.indexOf(f.id) < 0;
+      });
       if (!rows.length) return;
+      rest += rows.length;
       html += '<div class="food-group"><div class="food-group-title">' + g.label + ' · ' + rows.length + ' 种</div>' +
         '<div class="food-rows">' + rows.map(foodRow).join('') + '</div></div>';
     });
+    if (!rest) html += '<p class="empty">都看过了。换个分组，或直接搜名字。</p>';
 
     return html;
   }
@@ -1605,6 +1704,8 @@
       case 'open-food': openFood(el.dataset.food, sheet && sheet.type === 'picker'); break;
       case 'open-picker': openSheet({ type: 'picker' }); break;
       case 'open-rules': openSheet({ type: 'rules' }); break;
+    case 'rv-prev': reviewWeek = Math.max(1, (reviewWeek == null ? C.weekOf(state.startDate, C.todayKey()).week : reviewWeek) - 1); render({ scroll: true }); break;
+    case 'rv-next': reviewWeek = Math.min(C.weekOf(state.startDate, C.todayKey()).week, (reviewWeek == null ? C.weekOf(state.startDate, C.todayKey()).week : reviewWeek) + 1); render({ scroll: true }); break;
       case 'food-group':
         if (!sheet) break;
         sheet.group = el.dataset.group || 'all';
