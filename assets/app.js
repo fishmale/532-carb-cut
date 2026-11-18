@@ -15,6 +15,7 @@
   var setup = { sex: 'male', activity: 'hobby' };
   var deferredPrompt = null;
   var toastTimer = null;
+  var toastHandler = null;
 
   /* ---------------- 基础工具 ---------------- */
 
@@ -46,12 +47,18 @@
     return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + WD[d.getDay()];
   }
 
-  function toast(msg) {
+  function toast(msg, actionLabel, onAction) {
     var el = $('#toast');
-    el.textContent = msg;
+    toastHandler = actionLabel && onAction ? onAction : null;
+    el.innerHTML = '<span class="toast-msg">' + esc(msg) + '</span>' +
+      (actionLabel ? '<button type="button" class="toast-act" data-act="toast-act">' + esc(actionLabel) + '</button>' : '');
+    el.classList.toggle('has-act', !!actionLabel);
     el.classList.add('is-on');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.classList.remove('is-on'); }, 2400);
+    toastTimer = setTimeout(function () {
+      el.classList.remove('is-on');
+      toastHandler = null;
+    }, actionLabel ? 5200 : 2400);
   }
 
   /* ---------------- 存储 ---------------- */
@@ -68,6 +75,7 @@
       s.weights = s.weights || [];
       s.checkins = s.checkins || [];
       s.settings = s.settings || { theme: 'auto' };
+      s.settings.textScale = s.settings.textScale || 1;
       s.plan.adjustments = s.plan.adjustments || [];
       return s;
     } catch (e) {
@@ -83,9 +91,15 @@
     }
   }
 
+  function applyTextScale() {
+    var s = state && state.settings ? (state.settings.textScale || 1) : 1;
+    document.documentElement.style.fontSize = (s * 100) + '%';
+  }
+
   function applyTheme() {
     var t = state ? (state.settings.theme || 'auto') : 'auto';
     document.documentElement.setAttribute('data-theme', t);
+    applyTextScale();
   }
 
   /* ---------------- 首次设置 ---------------- */
@@ -186,6 +200,9 @@
 
     var wk = C.weekOf(state.startDate, C.todayKey());
     $('#wkTag').textContent = '第 ' + wk.week + ' 周 · 第 ' + wk.dayInWeek + ' 天';
+    var viewTitle = { today: '今日', log: '记录', plan: '方案', me: '我的' };
+    var titleEl = $('#viewTitle');
+    if (titleEl) titleEl.textContent = viewTitle[view] || '今日';
 
     $$('.tab').forEach(function (t) {
       var on = t.dataset.view === view;
@@ -363,12 +380,14 @@
     var can = C.diffDaysKeys(p.dueDate, C.todayKey()) >= 0;
     var wait = C.diffDaysKeys(C.todayKey(), p.dueDate);
     return '<section class="card alert warn">' +
-      '<div class="card-head"><span class="pill">调碳待执行</span><span class="muted small">第 ' + p.week + ' 周没达标</span></div>' +
+      '<div class="card-head"><span class="pill">碳水待下调</span><span class="muted small">第 ' + p.week + ' 周没达标</span></div>' +
       '<p class="alert-p">按方案下调 <b>−' + p.amount + ' g</b> 碳水，约 <b>−' + (p.amount * 4) + ' kcal/天</b>。</p>' +
-      '<p class="fine">' + (can ? '已经可以执行了。' : '等 ' + wait + ' 天，' + md(p.dueDate) + ' 起再降，别一次降太猛。') + '</p>' +
+      '<p class="fine">' + (can
+        ? '今天起可以执行，改完立即生效。'
+        : '532 的规矩是等 3 天：' + md(p.dueDate) + ' 起再降，还有 ' + wait + ' 天。') + '</p>' +
       '<div class="btn-row">' +
-        '<button type="button" class="btn primary" data-act="apply-cut" data-i="' + i + '"' + (can ? '' : ' disabled') + '>执行 −' + p.amount + ' g</button>' +
-        '<button type="button" class="btn ghost" data-act="hold-cut" data-i="' + i + '">本周先不动</button>' +
+        (can ? '<button type="button" class="btn primary" data-act="apply-cut" data-i="' + i + '">执行 −' + p.amount + ' g</button>' : '') +
+        '<button type="button" class="btn ghost' + (can ? '' : ' block') + '" data-act="hold-cut" data-i="' + i + '">本周先不动</button>' +
       '</div>' +
     '</section>';
   }
@@ -413,6 +432,9 @@
     var weekStart = C.weightAt(state, weekStartKey);
     if (weekStart == null) weekStart = startW;
     var weekDelta = cur - weekStart;
+    var hasThisWeek = state.weights.some(function (w) { return w.date >= weekStartKey; });
+    var todayRec = null;
+    state.weights.forEach(function (w) { if (w.date === todayKey) todayRec = w.kg; });
     var total = cur - startW;
     var goal = state.profile.goalWeight;
     var toGoal = goal ? cur - goal : null;
@@ -427,11 +449,11 @@
       '<section class="card">' +
         '<div class="card-head"><h2>体重</h2><span class="muted small">' + (state.weights.length) + ' 次记录</span></div>' +
         '<form class="inline-form" data-form="weigh">' +
-          '<label class="input-wrap"><input name="kg" type="number" step="0.1" inputmode="decimal" value="' + (last ? n1(last.kg) : '') + '" placeholder="今晨体重" aria-label="今天体重" required><span class="suffix">kg</span></label>' +
+          '<label class="input-wrap"><input name="kg" type="number" step="0.1" inputmode="decimal" value="' + (todayRec != null ? n1(todayRec) : '') + '" placeholder="' + (last ? '今晨 ' + n1(last.kg) : '今晨体重') + '" aria-label="今天体重" required><span class="suffix">kg</span></label>' +
           '<button class="btn primary" type="submit">保存</button>' +
         '</form>' +
         '<div class="stat-row">' +
-          '<div><span class="k">本周</span><b class="' + (weekDelta < 0 ? 'good' : '') + '">' + signed(weekDelta) + '<small> kg</small></b></div>' +
+          '<div><span class="k">本周</span><b class="' + (hasThisWeek && weekDelta < 0 ? 'good' : '') + '">' + (hasThisWeek ? signed(weekDelta) + '<small> kg</small>' : '—') + '</b></div>' +
           '<div><span class="k">累计</span><b class="' + (total < 0 ? 'good' : '') + '">' + signed(total) + '<small> kg</small></b></div>' +
           '<div><span class="k">距目标</span><b class="' + goalCls + '">' + goalTxt + '</b></div>' +
         '</div>' +
@@ -533,7 +555,10 @@
     var x = function (ts) { return L + ((ts - t0) / span) * (W - L - R); };
     var y = function (v) { return T + ((max - v) / (max - min)) * (H - T - B); };
 
-    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="体重曲线">';
+    var firstP = pts[0], lastP = pts[pts.length - 1];
+    var chartLabel = '体重曲线：' + pts.length + ' 次记录，' + md(firstP.date) + ' ' + n1(firstP.kg) +
+      ' kg，' + md(lastP.date) + ' ' + n1(lastP.kg) + ' kg；虚线是每周 −' + n2(perWeek) + ' kg 的目标线。';
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(chartLabel) + '">';
 
     for (var g = 0; g < 3; g++) {
       var gv = min + (max - min) * (0.16 + g * 0.34);
@@ -657,20 +682,39 @@
 
     parts.push(
       '<section class="card">' +
-        '<div class="card-head"><h2>规则</h2><span class="muted small">' + n2(weekTarget) + ' kg / 周</span></div>' +
-        '<ol class="rules">' +
-          '<li><b>首周按总消耗吃。</b>基础代谢 + 体重 × ' + plan.factor + '（' + esc(act.label) + '），不刻意制造缺口。</li>' +
-          '<li><b>5 : 3 : 2。</b>碳水 50%、蛋白 30%、脂肪 20%，按克数吃到就好。</li>' +
-          '<li><b>每月减 ' + plan.monthPct + '% 体重。</b>当前约 ' + n2(weekTarget) + ' kg/周、' + n1(monthTarget) + ' kg/月，每天记录空腹体重。</li>' +
-          '<li><b>只看第 7 天。</b>达标就不动；没达标等 3 天，再降 ' + plan.stepG + ' g 碳水。</li>' +
-          '<li><b>放纵日 7–15 天一次。</b>放在晚上吃，不用补救。</li>' +
-        '</ol>' +
+        '<div class="card-head"><h2>532 规则</h2><span class="muted small">' + n2(weekTarget) + ' kg / 周</span></div>' +
+        '<p class="rule-brief">首周按总消耗吃，之后每周只看第 7 天；达标不动，没达标等 3 天再降 ' + plan.stepG + ' g 碳水。</p>' +
+        '<button type="button" class="link" data-act="open-rules">查看全部 5 条规则</button>' +
       '</section>'
     );
 
-    parts.push(
-      '<section class="card">' +
-        '<div class="card-head"><h2>高级设置</h2><span class="muted small">改完立即生效</span></div>' +
+    return parts.join('');
+  }
+
+  /* 规则清单：方案页的折叠入口与 sheet 共用同一份内容 */
+  function rulesHtml() {
+    var plan = state.plan;
+    var profile = state.profile;
+    var act = C.ACTIVITY[profile.activity] || C.ACTIVITY.hobby;
+    var wNow = C.latestWeight(state);
+    var weightNow = wNow ? wNow.kg : profile.weightStart;
+    var weekTarget = C.weeklyTargetKg(weightNow, plan.monthPct);
+    var monthTarget = weightNow * plan.monthPct / 100;
+
+    return '<ol class="rules">' +
+      '<li><b>首周按总消耗吃。</b>基础代谢 + 体重 × ' + plan.factor + '（' + esc(act.label) + '），不刻意制造缺口。</li>' +
+      '<li><b>5 : 3 : 2。</b>碳水 50%、蛋白 30%、脂肪 20%，按克数吃到就好。</li>' +
+      '<li><b>每月减 ' + plan.monthPct + '% 体重。</b>当前约 ' + n2(weekTarget) + ' kg/周、' + n1(monthTarget) + ' kg/月，每天记录空腹体重。</li>' +
+      '<li><b>只看第 7 天。</b>达标就不动；没达标等 3 天，再降 ' + plan.stepG + ' g 碳水。</li>' +
+      '<li><b>放纵日 7–15 天一次。</b>放在晚上吃，不用补救。</li>' +
+    '</ol>';
+  }
+
+  /* 方案参数：低频调节项，放在「我的」里 */
+  function advancedSettingsHtml() {
+    var plan = state.plan;
+    return '<section class="card">' +
+        '<div class="card-head"><h2>方案参数</h2><span class="muted small">改完立即生效</span></div>' +
         '<div class="setting">' +
           '<div class="label">每月减重<small>默认 3%</small></div>' +
           '<select class="select" data-set="monthPct" aria-label="每月减重比例">' +
@@ -695,10 +739,7 @@
           '</form>' +
         '</div>' +
         '<div class="btn-row"><button type="button" class="btn ghost" data-act="recalc">按当前体重重算基准</button></div>' +
-      '</section>'
-    );
-
-    return parts.join('');
+      '</section>';
   }
 
   function carbSteps() {
@@ -725,7 +766,10 @@
     var dx = (W - L - R) / totalWeeks;
     var y = function (v) { return T + ((hi - v) / (hi - lo)) * (H - T - B); };
 
-    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="每周碳水目标阶梯图">';
+    var totalCut = state.plan.adjustments.reduce(function (sum, a) { return sum + a.grams; }, 0);
+    var stepLabel = '碳水阶梯：初始 ' + base + ' g，下调 ' + state.plan.adjustments.length + ' 次共 ' + totalCut +
+      ' g，当前 ' + rows[rows.length - 1] + ' g，共 ' + totalWeeks + ' 周。';
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(stepLabel) + '">';
 
     svg += '<line class="grid" x1="' + L + '" y1="' + y(base).toFixed(1) + '" x2="' + (W - R) + '" y2="' + y(base).toFixed(1) + '"/>';
     svg += '<text x="' + (L - 6) + '" y="' + (y(base) + 3).toFixed(1) + '" text-anchor="end">' + base + '</text>';
@@ -780,11 +824,23 @@
       '</section>' +
 
       '<section class="card">' +
-        '<div class="card-head"><h2>外观</h2></div>' +
-        '<div class="seg" role="group" aria-label="主题">' +
-          '<button type="button" class="seg-btn' + (theme === 'auto' ? ' is-on' : '') + '" data-theme-set="auto">跟随系统</button>' +
-          '<button type="button" class="seg-btn' + (theme === 'light' ? ' is-on' : '') + '" data-theme-set="light">浅色</button>' +
-          '<button type="button" class="seg-btn' + (theme === 'dark' ? ' is-on' : '') + '" data-theme-set="dark">深色</button>' +
+        '<div class="card-head"><h2>显示</h2><span class="muted small">外观跟随系统</span></div>' +
+        '<div class="setting stacked">' +
+          '<div class="label">文字大小<small>放大后卡片跟着长高，不会裁字</small></div>' +
+          '<div class="seg" role="group" aria-label="文字大小">' +
+            [[1, '标准'], [1.15, '大'], [1.3, '特大']].map(function (pair) {
+              var on = Math.abs((state.settings.textScale || 1) - pair[0]) < 0.01;
+              return '<button type="button" class="seg-btn' + (on ? ' is-on' : '') + '" data-text-scale="' + pair[0] + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + pair[1] + '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>' +
+        '<div class="setting">' +
+          '<div class="label">外观<small>一般不用改，跟随系统最省心</small></div>' +
+          '<select class="select" data-set="theme" aria-label="外观">' +
+            '<option value="auto"' + (theme === 'auto' ? ' selected' : '') + '>跟随系统</option>' +
+            '<option value="light"' + (theme === 'light' ? ' selected' : '') + '>浅色</option>' +
+            '<option value="dark"' + (theme === 'dark' ? ' selected' : '') + '>深色</option>' +
+          '</select>' +
         '</div>' +
       '</section>' +
 
@@ -798,6 +854,8 @@
         '<button type="button" class="btn danger block" data-act="reset">清空并重新开始</button>' +
         '<p class="fine">数据存在浏览器本地。换手机或清缓存前先导出 JSON，再在新设备导入。</p>' +
       '</section>' +
+
+      advancedSettingsHtml() +
 
       '<section class="card">' +
         '<div class="card-head"><h2>装到主屏</h2></div>' +
@@ -926,17 +984,30 @@
       '</form>';
     }
 
+    if (sheet.type === 'rules') {
+      return sheetHead('532 规则', '五条，按顺序执行就行。') +
+        '<div class="sheet-body">' + rulesHtml() + '</div>' +
+        '<button class="btn primary block" type="button" data-act="close-sheet">知道了</button>';
+    }
+
     if (sheet.type === 'weigh') {
       var wKey = sheet.date || C.todayKey();
-      var wVal = C.weightAt(state, wKey);
+      var wExact = null;
+      for (var i = 0; i < state.weights.length; i++) {
+        if (state.weights[i].date === wKey) wExact = state.weights[i].kg;
+      }
+      var wLast = C.latestWeight(state);
       var isToday = wKey === C.todayKey();
+      var wHint = wExact == null && wLast
+        ? '上次 ' + n1(wLast.kg) + ' kg（' + md(wLast.date) + '），今天还没记。'
+        : '每天可以记一次，同一天再记会覆盖；第 7 天的记录用于这一周结算。';
       return '<form data-form="weigh" data-date="' + wKey + '">' +
         sheetHead(isToday ? '记录体重' : '补记体重', '晨起、空腹、上完厕所，每天同一时间最准。') +
         '<div class="sheet-body">' +
-          '<label class="input-wrap big"><input name="kg" type="number" inputmode="decimal" step="0.1" min="20" max="400" value="' + (wVal != null ? n1(wVal) : '') + '" placeholder="0.0" aria-label="体重"><span class="suffix">kg</span></label>' +
+          '<label class="input-wrap big"><input name="kg" type="number" inputmode="decimal" step="0.1" min="20" max="400" value="' + (wExact != null ? n1(wExact) : '') + '" placeholder="' + (wExact != null ? '0.0' : (wLast ? n1(wLast.kg) : '0.0')) + '" aria-label="体重"><span class="suffix">kg</span></label>' +
           '<div class="field" style="margin-top:12px"><label for="wDate">日期</label>' +
             '<div class="input-wrap"><input id="wDate" name="date" type="date" value="' + wKey + '" max="' + C.todayKey() + '" aria-label="记录日期"></div></div>' +
-          '<p class="fine">每天可以记一次，同一天再记会覆盖；第 7 天的记录用于这一周结算。</p>' +
+          '<p class="fine">' + wHint + '</p>' +
         '</div>' +
         '<button class="btn primary block" type="submit">保存</button>' +
       '</form>';
@@ -1382,6 +1453,7 @@
       case 'close-modal': closeModal(); break;
       case 'open-food': openFood(el.dataset.food, sheet && sheet.type === 'picker'); break;
       case 'open-picker': openSheet({ type: 'picker' }); break;
+      case 'open-rules': openSheet({ type: 'rules' }); break;
       case 'back-picker': openSheet({ type: 'picker' }); break;
       case 'open-custom': openSheet({ type: 'custom' }); break;
       case 'open-weigh': openSheet({ type: 'weigh', date: el.dataset.date || C.todayKey() }); break;
@@ -1392,12 +1464,29 @@
       case 'del-food':
         var key = C.todayKey();
         var id = el.dataset.id;
-        state.foods[key] = (state.foods[key] || []).filter(function (x) { return x.id !== id; });
+        var list = state.foods[key] || [];
+        var idx = -1;
+        for (var fi = 0; fi < list.length; fi++) if (list[fi].id === id) idx = fi;
+        if (idx < 0) break;
+        var removed = list[idx];
+        state.foods[key] = list.filter(function (x) { return x.id !== id; });
         saveState();
         render();
-        toast('已删除');
+        toast('已删除 ' + (removed.name || '这条记录'), '撤销', function () {
+          state.foods[key] = state.foods[key] || [];
+          state.foods[key].splice(Math.min(idx, state.foods[key].length), 0, removed);
+          saveState();
+          render();
+          toast('已恢复');
+        });
         break;
       case 'apply-cut': applyCut(Number(el.dataset.i)); break;
+      case 'toast-act':
+        var tfn = toastHandler;
+        toastHandler = null;
+        $('#toast').classList.remove('is-on');
+        if (tfn) tfn();
+        break;
       case 'hold-cut': holdCut(Number(el.dataset.i)); break;
       case 'log-cheat': logCheat(); break;
       case 'undo-cheat': undoCheat(); break;
@@ -1448,6 +1537,16 @@
         return;
       }
 
+      var scaleBtn = e.target.closest('[data-text-scale]');
+      if (scaleBtn) {
+        var sc = Number(scaleBtn.dataset.textScale) || 1;
+        state.settings.textScale = sc;
+        saveState();
+        render();
+        toast(sc === 1 ? '文字大小：标准' : sc === 1.15 ? '文字大小：大' : '文字大小：特大');
+        return;
+      }
+
       var el = e.target.closest('[data-act]');
       if (el) handleAct(el.dataset.act, el);
     });
@@ -1471,6 +1570,19 @@
 
       if (el.dataset && el.dataset.set) {
         var key = el.dataset.set;
+        if (key === 'theme') {
+          state.settings.theme = (el.value === 'light' || el.value === 'dark') ? el.value : 'auto';
+          saveState();
+          render();
+          toast(el.value === 'auto' ? '外观：跟随系统' : el.value === 'light' ? '外观：浅色' : '外观：深色');
+          return;
+        }
+        if (key === 'textScale') {
+          state.settings.textScale = Number(el.value) || 1;
+          saveState();
+          render();
+          return;
+        }
         var val = Number(el.value);
         if (key === 'monthPct' && val > 0) {
           state.plan.monthPct = val;
