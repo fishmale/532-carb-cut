@@ -51,13 +51,13 @@
     { g: 'staple', id: 'ricecake', name: '年糕', carb: 35.0, protein: 3.0, fat: 0.5, portion: 100, alt: '江米' },
 
     /* 蛋白 */
-    { g: 'protein', id: 'chicken', name: '鸡胸肉', carb: 0.0, protein: 31.0, fat: 3.6, portion: 150, alt: '鸡胸 鸡肉 鸡脯' },
+    { g: 'protein', id: 'chicken', name: '鸡胸肉（熟）', carb: 0.0, protein: 31.0, fat: 3.6, portion: 150, alt: '鸡胸 鸡肉 鸡脯' },
     { g: 'protein', id: 'chickenthigh', name: '鸡腿肉（去皮）', carb: 0.0, protein: 19.0, fat: 9.0, portion: 150, alt: '鸡腿 琵琶腿' },
-    { g: 'protein', id: 'egg', name: '鸡蛋', carb: 0.7, protein: 13.0, fat: 9.0, portion: 50, alt: '蛋 水煮蛋 煎蛋' },
+    { g: 'protein', id: 'egg', name: '鸡蛋', carb: 2.8, protein: 13.3, fat: 8.8, portion: 50, alt: '蛋 水煮蛋 煎蛋' },
     { g: 'protein', id: 'eggwhite', name: '蛋清', carb: 0.0, protein: 11.0, fat: 0.2, portion: 60, alt: '蛋白 鸡蛋清' },
-    { g: 'protein', id: 'beef', name: '牛肉（瘦）', carb: 0.0, protein: 26.0, fat: 8.0, portion: 150, alt: '牛里脊 牛肉' },
+    { g: 'protein', id: 'beef', name: '牛肉（瘦）', carb: 0.0, protein: 26.0, fat: 6.0, portion: 150, alt: '牛里脊 牛肉' },
     { g: 'protein', id: 'beefmince', name: '牛肉馅', carb: 0.0, protein: 19.0, fat: 13.0, portion: 120, alt: '牛肉末 牛肉饼' },
-    { g: 'protein', id: 'pork', name: '猪里脊', carb: 0.0, protein: 29.0, fat: 6.0, portion: 150, alt: '猪肉 瘦肉 里脊' },
+    { g: 'protein', id: 'pork', name: '猪里脊', carb: 0.0, protein: 26.0, fat: 6.0, portion: 150, alt: '猪肉 瘦肉 里脊' },
     { g: 'protein', id: 'porkbelly', name: '五花肉', carb: 0.0, protein: 9.0, fat: 37.0, portion: 80, alt: '肥肉 三层肉' },
     { g: 'protein', id: 'lamb', name: '羊肉（瘦）', carb: 0.0, protein: 25.0, fat: 8.0, portion: 150, alt: '羊肉 羊腿' },
     { g: 'protein', id: 'duck', name: '鸭肉', carb: 0.0, protein: 19.0, fat: 18.0, portion: 120, alt: '鸭 烤鸭' },
@@ -142,8 +142,52 @@
     { g: 'snack', id: 'burger', name: '汉堡', carb: 25.0, protein: 13.0, fat: 12.0, portion: 200, alt: '汉堡包 牛肉堡' },
     { g: 'snack', id: 'pizza', name: '披萨', carb: 30.0, protein: 11.0, fat: 10.0, portion: 120, alt: '比萨 披萨片' },
     { g: 'snack', id: 'instantnoodle', name: '方便面', carb: 60.0, protein: 9.0, fat: 17.0, portion: 100, alt: '泡面 速食面' },
-    { g: 'snack', id: 'proteinbar', name: '蛋白棒', carb: 40.0, protein: 30.0, fat: 10.0, portion: 60, alt: '能量棒 代餐棒' }
+    { g: 'snack', id: 'proteinbar', name: '蛋白棒', carb: 40.0, protein: 30.0, fat: 10.0, portion: 60, alt: '能量棒 代餐棒' },
+    { g: 'protein', id: 'soyiso', name: '山松 SD-300 大豆蛋白粉', carb: 1.5, protein: 90.7, fat: 0.8, portion: 30, alt: '蛋白粉 大豆分离蛋白 山松 SD300 植物蛋白', src: 'label' }
   ];
+
+  /* 每条数据对应「每 100 g 可食部」；basis 说明称重形态（熟重/干重/生重），src 说明出处 */
+  var DATA_SOURCE = '中国食物成分表（第 6 版）';
+  var FOOD_BASIS = {
+    rice: '熟', congee: '熟', noodle: '熟', ricenoodle: '熟', mantou: '熟', pasta: '干',
+    oats: '干', ricecake: '熟', wholegrain: '即食', bread: '即食', corn: '熟', sweetpot: '蒸熟',
+    potato: '蒸熟', chicken: '熟', egg: '生', beef: '熟', pork: '熟', lamb: '熟', duck: '熟', salmon: '生', shrimp: '生', tofu: '即食',
+    milk: '即食', yogurt: '即食', whey: '干粉', soyiso: '干粉', oil: '即食', almond: '即食',
+    instantnoodle: '干', proteinbar: '即食'
+  };
+  /* 家用份量：把「一碗」「一勺」换成克数，减少目测误差 */
+  var FOOD_PORTIONS = {
+    rice: [{ label: '半碗', g: 75 }, { label: '一碗', g: 150 }, { label: '一大碗', g: 225 }],
+    noodle: [{ label: '小碗', g: 120 }, { label: '一碗', g: 200 }],
+    ricenoodle: [{ label: '一碗', g: 200 }],
+    mantou: [{ label: '半个', g: 50 }, { label: '一个', g: 100 }],
+    bread: [{ label: '一片', g: 40 }],
+    wholegrain: [{ label: '一片', g: 40 }],
+    oats: [{ label: '一勺', g: 15 }, { label: '一包', g: 40 }],
+    congee: [{ label: '一碗', g: 250 }],
+    pasta: [{ label: '一份', g: 80 }],
+    sweetpot: [{ label: '一个', g: 200 }],
+    potato: [{ label: '一个', g: 150 }],
+    corn: [{ label: '一根', g: 200 }],
+    egg: [{ label: '一个', g: 50 }, { label: '两个', g: 100 }],
+    chicken: [{ label: '一小块', g: 100 }, { label: '一块', g: 150 }],
+    beef: [{ label: '一小块', g: 100 }, { label: '一块', g: 150 }],
+    salmon: [{ label: '一块', g: 120 }],
+    tofu: [{ label: '半块', g: 150 }, { label: '一块', g: 300 }],
+    milk: [{ label: '一杯', g: 250 }, { label: '一盒', g: 250 }],
+    yogurt: [{ label: '一杯', g: 150 }],
+    whey: [{ label: '一勺', g: 30 }],
+    soyiso: [{ label: '一勺', g: 30 }, { label: '两勺', g: 60 }],
+    oil: [{ label: '一勺', g: 10 }, { label: '一汤匙', g: 15 }],
+    almond: [{ label: '一小把', g: 20 }],
+    banana: [{ label: '一根', g: 120 }],
+    apple: [{ label: '一个', g: 200 }],
+    instantnoodle: [{ label: '一包', g: 100 }]
+  };
+  FOODS.forEach(function (f) {
+    if (FOOD_BASIS[f.id]) f.basis = FOOD_BASIS[f.id];
+    if (FOOD_PORTIONS[f.id]) f.portions = FOOD_PORTIONS[f.id];
+  });
 
   /* 食物分组，用于选择器里的分区展示 */
   var FOOD_GROUPS = [
@@ -653,6 +697,7 @@
     ACTIVITY_LIST: ACTIVITY_LIST,
     FOODS: FOODS,
     FOOD_GROUPS: FOOD_GROUPS,
+    DATA_SOURCE: DATA_SOURCE,
     WORKOUT_TYPES: WORKOUT_TYPES,
     workoutLabel: workoutLabel,
     addWorkout: addWorkout,

@@ -1352,3 +1352,12 @@ html { font-size: 100%; }
 .rv-bar.is-future .rv-val, .rv-bar.is-future .rv-day { opacity: 0.45; }
 .rv-bar.is-future .rv-goal { opacity: 0.5; }
 .rv-bar.is-future i { background: transparent; }
+
+/* 份量面板：家用份量、编辑记录、数据出处 */
+.portion-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.portion-row .pbtn { display: inline-flex; align-items: baseline; gap: 6px; min-height: 40px; }
+.portion-row .pbtn i { font-style: normal; font-size: 0.6875rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.portion-row .pbtn.is-on i { color: var(--green-ink); }
+.src-note { margin: 12px 0 0; font-size: 0.6875rem; color: var(--muted); }
+button.log-main { border: 0; background: none; padding: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+button.log-main:active { opacity: 0.7; }

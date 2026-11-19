@@ -215,5 +215,21 @@ ok('monthly review trends', () => {
   assert.equal(m.weeks[2].isCurrent, true);
 });
 
+ok('food data carries basis, portions and the soy isolate entry', () => {
+  assert.ok(C.DATA_SOURCE && C.DATA_SOURCE.indexOf('中国食物成分表') === 0);
+  const rice = C.FOODS.find(f => f.id === 'rice');
+  assert.equal(rice.basis, '熟');
+  assert.ok(rice.portions.length >= 2);
+  assert.equal(rice.portions[1].g, 150);
+  const chicken = C.FOODS.find(f => f.id === 'chicken');
+  assert.equal(chicken.basis, '熟');
+  const soy = C.FOODS.find(f => f.id === 'soyiso');
+  assert.ok(soy, 'soy protein powder missing');
+  assert.equal(soy.protein, 90.7);
+  assert.equal(soy.src, 'label');
+  assert.equal(C.FOODS.length, 103);
+});
+
 console.log(process.exitCode ? 'FAILED' : 'all good');
+
 

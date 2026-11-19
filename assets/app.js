@@ -339,9 +339,12 @@
         '<div class="card-head"><h2>今日记录</h2><span class="muted small">' + (entries.length ? entries.length + ' 项' : '') + '</span></div>' +
         (entries.length
           ? '<ul class="loglist">' + entries.map(function (e) {
+              var body = '<b>' + esc(e.name) + '</b>' +
+                '<span>' + (e.grams ? n0(e.grams) + ' g · ' : '') + '碳 ' + n1(e.carb) + ' · 蛋 ' + n1(e.protein) + ' · 脂 ' + n1(e.fat) + '</span>';
               return '<li>' +
-                '<div class="log-main"><b>' + esc(e.name) + '</b>' +
-                '<span>' + (e.grams ? n0(e.grams) + ' g · ' : '') + '碳 ' + n1(e.carb) + ' · 蛋 ' + n1(e.protein) + ' · 脂 ' + n1(e.fat) + '</span></div>' +
+                (e.foodId
+                  ? '<button type="button" class="log-main" data-act="edit-food" data-id="' + e.id + '" data-food="' + e.foodId + '" aria-label="修改 ' + esc(e.name) + ' 的克数">' + body + '</button>'
+                  : '<div class="log-main">' + body + '</div>') +
                 '<button type="button" class="icon-btn" data-act="del-food" data-id="' + e.id + '" aria-label="删除 ' + esc(e.name) + '">✕</button>' +
               '</li>';
             }).join('') + '</ul>'
@@ -1151,18 +1154,28 @@
 
     if (sheet.type === 'food') {
       var f = sheet.food;
-      return '<form data-form="add-food" data-food="' + f.id + '">' +
-        sheetHead(esc(f.name), '每 100 g：碳水 ' + f.carb + ' g · 蛋白 ' + f.protein + ' g · 脂肪 ' + f.fat + ' g', sheet.back) +
+      var basis = f.basis ? '（' + f.basis + '重）' : '';
+      var grams0 = sheet.grams || f.portion;
+      var portionBtns = (f.portions || []).map(function (p) {
+        return '<button type="button" class="gbtn pbtn" data-g="' + p.g + '">' + esc(p.label) + '<i>' + p.g + ' g</i></button>';
+      }).join('');
+      var gramBtns = [50, 100, 150, 200, 250].map(function (g) {
+        return '<button type="button" class="gbtn' + (g === f.portion ? ' is-on' : '') + '" data-g="' + g + '">' + g + ' g</button>';
+      }).join('');
+      var srcTxt = f.src === 'label' ? '数据：产品营养成分表' : '数据：' + C.DATA_SOURCE;
+      return '<form data-form="add-food" data-food="' + f.id + '"' + (sheet.editId ? ' data-edit="' + sheet.editId + '"' : '') + '>' +
+        sheetHead(esc(f.name), '每 100 g' + basis + '：碳水 ' + f.carb + ' g · 蛋白 ' + f.protein + ' g · 脂肪 ' + f.fat + ' g', sheet.back) +
         '<div class="sheet-body">' +
-          '<div class="grams-row">' +
-            [50, 100, 150, 200, 250].map(function (g) {
-              return '<button type="button" class="gbtn' + (g === f.portion ? ' is-on' : '') + '" data-g="' + g + '">' + g + ' g</button>';
-            }).join('') +
-            '<label class="input-wrap"><input id="foodGrams" name="grams" type="number" inputmode="decimal" min="1" max="2000" step="1" value="' + f.portion + '" aria-label="克数"><span class="suffix">g</span></label>' +
+          (portionBtns
+            ? '<div class="portion-row">' + portionBtns + '</div>'
+            : '') +
+          '<div class="grams-row">' + (portionBtns ? '' : gramBtns) +
+            '<label class="input-wrap"><input id="foodGrams" name="grams" type="number" inputmode="decimal" min="1" max="2000" step="1" value="' + grams0 + '" aria-label="克数"><span class="suffix">g</span></label>' +
           '</div>' +
           '<div class="sheet-sum" id="foodSum"></div>' +
+          '<p class="src-note">' + srcTxt + '</p>' +
         '</div>' +
-        '<button class="btn primary block" type="submit">加入今日</button>' +
+        '<button class="btn primary block" type="submit">' + (sheet.editId ? '保存修改' : '加入今日') + '</button>' +
       '</form>';
     }
 
@@ -1176,6 +1189,7 @@
           '<input id="foodSearch" class="field" type="search" placeholder="搜食物：米饭、鸡胸、牛奶…" aria-label="搜索食物" autocomplete="off">' +
           foodGroupChips() +
           '<div id="foodList">' + foodListHtml('', sheet.group) + '</div>' +
+          '<p class="src-note">数据：' + C.DATA_SOURCE + '；标「熟重 / 干重」的按括号里的形态称重。</p>' +
           '<button type="button" class="btn ghost block" data-act="open-custom">找不到？自定义一份</button>' +
         '</div>';
     }
@@ -1351,10 +1365,15 @@
     }
   }
 
-  function openFood(id, fromPicker) {
+  function openFood(id, fromPicker, editId) {
     var f = C.FOODS.filter(function (x) { return x.id === id; })[0];
     if (!f) return;
-    openSheet({ type: 'food', food: f, back: fromPicker ? 'picker' : null });
+    var entry = null;
+    if (editId) {
+      var list = state.foods[C.todayKey()] || [];
+      entry = list.filter(function (x) { return x.id === editId; })[0] || null;
+    }
+    openSheet({ type: 'food', food: f, back: fromPicker ? 'picker' : null, editId: editId, grams: entry ? entry.grams : null });
   }
 
   function foodKcal(f) {
@@ -1511,6 +1530,21 @@
     saveState();
     render();
     toast('已加入 ' + Math.round(grams) + ' g ' + food.name);
+  }
+
+  function updateFood(food, entryId, grams) {
+    var key = C.todayKey();
+    var list = state.foods[key] || [];
+    var e = list.filter(function (x) { return x.id === entryId; })[0];
+    if (!e) { toast('这条记录找不到了'); return; }
+    var m = C.foodMacros(food, grams);
+    e.grams = Math.round(grams);
+    e.carb = m.carb;
+    e.protein = m.protein;
+    e.fat = m.fat;
+    saveState();
+    render();
+    toast('已更新为 ' + Math.round(grams) + ' g');
   }
 
   function settle(week, weight) {
@@ -1720,7 +1754,12 @@
       var food = C.FOODS.filter(function (x) { return x.id === form.dataset.food; })[0];
       var grams = parseFloat(form.grams.value);
       if (!food || !(grams > 0)) { toast('克数填一下'); return; }
+      var editId = form.dataset.edit;
       closeSheet();
+      if (editId) {
+        updateFood(food, editId, grams);
+        return;
+      }
       addFood(food, grams);
       return;
     }
@@ -1773,6 +1812,7 @@
       case 'close-sheet': closeSheet(); break;
       case 'close-modal': closeModal(); break;
       case 'open-food': openFood(el.dataset.food, sheet && sheet.type === 'picker'); break;
+      case 'edit-food': openFood(el.dataset.food, false, el.dataset.id); break;
       case 'open-picker': openSheet({ type: 'picker' }); break;
       case 'open-rules': openSheet({ type: 'rules' }); break;
     case 'rv-prev': reviewWeek = Math.max(1, (reviewWeek == null ? C.weekOf(state.startDate, C.todayKey()).week : reviewWeek) - 1); render({ scroll: true }); break;
